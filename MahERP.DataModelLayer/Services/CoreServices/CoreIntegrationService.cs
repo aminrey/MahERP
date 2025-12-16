@@ -1,9 +1,7 @@
 ﻿using MahERP.DataModelLayer.Entities.Core;
-using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.Entities.TaskManagement;
 using MahERP.DataModelLayer.Enums;
 using MahERP.DataModelLayer.Extensions;
-using MahERP.DataModelLayer.Repository.CrmRepository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -19,21 +17,15 @@ namespace MahERP.DataModelLayer.Services.CoreServices
     public class CoreIntegrationService : ICoreIntegrationService
     {
         private readonly AppDbContext _context;
-        private readonly ICrmLeadRepository _leadRepo;
-        private readonly ICrmFollowUpRepository _followUpRepo;
         private readonly TaskCodeGenerator _taskCodeGenerator;
         private readonly ILogger<CoreIntegrationService> _logger;
 
         public CoreIntegrationService(
             AppDbContext context,
-            ICrmLeadRepository leadRepo,
-            ICrmFollowUpRepository followUpRepo,
             TaskCodeGenerator taskCodeGenerator,
             ILogger<CoreIntegrationService> logger)
         {
             _context = context;
-            _leadRepo = leadRepo;
-            _followUpRepo = followUpRepo;
             _taskCodeGenerator = taskCodeGenerator;
             _logger = logger;
         }
@@ -78,16 +70,6 @@ namespace MahERP.DataModelLayer.Services.CoreServices
                     TaskTypeInput = 1, // کاربر ساخته
                     IsActive = true,
                     IsDeleted = false,
-
-                    // ⭐ CRM Integration
-                    SourceModule = request.SourceModule,
-                    CrmSourceType = request.CrmSourceType,
-                    CrmLeadId = request.CrmLeadId,
-                    CrmOpportunityId = request.CrmOpportunityId,
-                    CrmFollowUpId = request.CrmFollowUpId,
-                    CrmTicketId = request.CrmTicketId,
-                    CrmContractId = request.CrmContractId,
-                    CrmCustomerId = request.CrmCustomerId,
 
                     // Contact/Organization
                     ContactId = request.ContactId,
@@ -139,63 +121,9 @@ namespace MahERP.DataModelLayer.Services.CoreServices
         /// </summary>
         public async Task<CoreTaskResult> CreateTaskFromCrmLeadAsync(CrmLeadTaskRequest request)
         {
-            try
-            {
-                // دریافت اطلاعات Lead
-                var lead = await _leadRepo.GetByIdAsync(request.LeadId, includeDetails: true);
-                if (lead == null)
-                    return CoreTaskResult.Failed("سرنخ یافت نشد");
-
-                // تعیین کاربر انجام‌دهنده
-                string assignedUserId = request.AssignedUserId ?? lead.AssignedUserId;
-
-                // ساخت عنوان تسک
-                string title = GetCrmActionTitle(request.ActionType, lead.DisplayName);
-
-                // ساخت توضیحات
-                string description = $"پیگیری سرنخ: {lead.DisplayName}";
-                if (!string.IsNullOrEmpty(request.Note))
-                    description += $"\n\nیادداشت: {request.Note}";
-
-                // ایجاد درخواست تسک
-                var taskRequest = new CoreTaskRequest
-                {
-                    Title = title,
-                    Description = description,
-                    AssignedUserId = assignedUserId,
-                    BranchId = lead.BranchId,
-                    CreatorUserId = request.CreatorUserId,
-                    DueDate = request.DueDate,
-                    Priority = (byte)request.Priority,
-                    IsImportant = request.Priority >= CrmTaskPriority.High,
-
-                    // CRM Info
-                    SourceModule = ModuleSourceType.CRM,
-                    CrmSourceType = CrmTaskSourceType.LeadFollowUp,
-                    CrmLeadId = request.LeadId,
-
-                    // Contact/Organization
-                    ContactId = lead.ContactId,
-                    OrganizationId = lead.OrganizationId,
-
-                    NotifyAssignee = true
-                };
-
-                var result = await CreateTaskFromModuleAsync(taskRequest);
-
-                // بروزرسانی NextFollowUpDate در Lead
-                if (result.Success)
-                {
-                    await _leadRepo.UpdateNextFollowUpDateAsync(request.LeadId, request.DueDate);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطا در ایجاد تسک از سرنخ CRM: LeadId={LeadId}", request.LeadId);
-                return CoreTaskResult.Failed($"خطا: {ex.Message}");
-            }
+            // TODO: نیاز به بازنویسی با سیستم جدید CRM
+            // سیستم قبلی CrmLead حذف شده و با Interaction جایگزین شده است
+            return CoreTaskResult.Failed("این قابلیت نیاز به بازنویسی دارد - سیستم CRM جدید");
         }
 
         /// <summary>
@@ -203,8 +131,8 @@ namespace MahERP.DataModelLayer.Services.CoreServices
         /// </summary>
         public async Task<CoreTaskResult> CreateTaskFromCrmOpportunityAsync(CrmOpportunityTaskRequest request)
         {
-            // TODO: پیاده‌سازی بعد از ایجاد Entity CrmOpportunity
-            return CoreTaskResult.Failed("این قابلیت هنوز پیاده‌سازی نشده است");
+            // TODO: نیاز به بازنویسی با سیستم جدید CRM
+            return CoreTaskResult.Failed("این قابلیت نیاز به بازنویسی دارد - سیستم CRM جدید");
         }
 
         /// <summary>
@@ -212,71 +140,9 @@ namespace MahERP.DataModelLayer.Services.CoreServices
         /// </summary>
         public async Task<CoreTaskResult> CreateTaskFromCrmFollowUpAsync(CrmFollowUpTaskRequest request)
         {
-            try
-            {
-                // دریافت اطلاعات FollowUp
-                var followUp = await _followUpRepo.GetByIdAsync(request.FollowUpId);
-                if (followUp == null)
-                    return CoreTaskResult.Failed("پیگیری یافت نشد");
-
-                // دریافت اطلاعات Lead
-                var lead = await _leadRepo.GetByIdAsync(followUp.LeadId, includeDetails: true);
-                if (lead == null)
-                    return CoreTaskResult.Failed("سرنخ مرتبط یافت نشد");
-
-                // تعیین عنوان و توضیحات
-                string title = request.UseFollowUpData
-                    ? followUp.DisplayTitle
-                    : request.CustomTitle ?? followUp.DisplayTitle;
-
-                string description = request.UseFollowUpData
-                    ? $"پیگیری: {followUp.Description}\n\nسرنخ: {lead.DisplayName}"
-                    : request.CustomDescription ?? "";
-
-                DateTime dueDate = request.UseFollowUpData
-                    ? followUp.DueDate
-                    : request.CustomDueDate ?? followUp.DueDate;
-
-                // ایجاد درخواست تسک
-                var taskRequest = new CoreTaskRequest
-                {
-                    Title = title,
-                    Description = description,
-                    AssignedUserId = followUp.AssignedUserId,
-                    BranchId = lead.BranchId,
-                    CreatorUserId = request.CreatorUserId,
-                    DueDate = dueDate,
-                    Priority = followUp.Priority,
-                    IsImportant = followUp.Priority >= 2,
-
-                    // CRM Info
-                    SourceModule = ModuleSourceType.CRM,
-                    CrmSourceType = CrmTaskSourceType.LeadFollowUp,
-                    CrmLeadId = followUp.LeadId,
-                    CrmFollowUpId = followUp.Id,
-
-                    // Contact/Organization
-                    ContactId = lead.ContactId,
-                    OrganizationId = lead.OrganizationId,
-
-                    NotifyAssignee = true
-                };
-
-                var result = await CreateTaskFromModuleAsync(taskRequest);
-
-                // بروزرسانی FollowUp با TaskId
-                if (result.Success && result.TaskId.HasValue)
-                {
-                    await _followUpRepo.ConvertToTaskAsync(followUp.Id, result.TaskId.Value, request.CreatorUserId);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطا در ایجاد تسک از پیگیری CRM: FollowUpId={FollowUpId}", request.FollowUpId);
-                return CoreTaskResult.Failed($"خطا: {ex.Message}");
-            }
+            // TODO: نیاز به بازنویسی با سیستم جدید CRM
+            // سیستم قبلی CrmFollowUp حذف شده و با Interaction جایگزین شده است
+            return CoreTaskResult.Failed("این قابلیت نیاز به بازنویسی دارد - سیستم CRM جدید");
         }
 
         #endregion
@@ -291,32 +157,12 @@ namespace MahERP.DataModelLayer.Services.CoreServices
             try
             {
                 var task = await _context.Tasks_Tbl
-                    .Include(t => t.CrmLead)
-                    .Include(t => t.CrmFollowUp)
                     .FirstOrDefaultAsync(t => t.Id == taskId);
 
                 if (task == null) return;
 
-                // اگر تسک از CRM آمده
-                if (task.SourceModule == ModuleSourceType.CRM)
-                {
-                    // بروزرسانی CrmFollowUp
-                    if (task.CrmFollowUpId.HasValue)
-                    {
-                        await _followUpRepo.CompleteAsync(task.CrmFollowUpId.Value, completionNote, completedByUserId);
-                    }
-
-                    // بروزرسانی تاریخ آخرین تماس در Lead
-                    if (task.CrmLeadId.HasValue)
-                    {
-                        await _leadRepo.UpdateLastContactDateAsync(task.CrmLeadId.Value, DateTime.Now);
-                        await _leadRepo.UpdateNextFollowUpDateAsync(task.CrmLeadId.Value);
-                    }
-
-                    _logger.LogInformation(
-                        "تسک CRM تکمیل شد: TaskId={TaskId}, LeadId={LeadId}, FollowUpId={FollowUpId}",
-                        taskId, task.CrmLeadId, task.CrmFollowUpId);
-                }
+                // TODO: اگر تسک از CRM آمده - نیاز به بازنویسی با سیستم جدید
+                // if (task.SourceModule == ModuleSourceType.CRM) { ... }
 
                 // بروزرسانی ActivityBase
                 await UpdateActivityStatusAsync(taskId, 2); // تکمیل شده
@@ -357,17 +203,8 @@ namespace MahERP.DataModelLayer.Services.CoreServices
                 var task = await _context.Tasks_Tbl.FindAsync(taskId);
                 if (task == null) return;
 
-                // اگر تسک از CRM آمده، FollowUp را آزاد کن
-                if (task.CrmFollowUpId.HasValue)
-                {
-                    var followUp = await _context.CrmFollowUp_Tbl.FindAsync(task.CrmFollowUpId.Value);
-                    if (followUp != null)
-                    {
-                        followUp.TaskId = null;
-                        await _context.SaveChangesAsync();
-                    }
-                }
-
+                // TODO: اگر تسک از CRM آمده - نیاز به بازنویسی با سیستم جدید
+                
                 // غیرفعال کردن ActivityTask
                 var activityTask = await _context.ActivityTask_Tbl
                     .FirstOrDefaultAsync(at => at.TaskId == taskId && at.IsActive);
@@ -395,6 +232,7 @@ namespace MahERP.DataModelLayer.Services.CoreServices
         /// </summary>
         public async Task<bool> ValidateLeadHasNextActionAsync(int leadId)
         {
+            // TODO: نیاز به بازنویسی با سیستم جدید CRM
             // بررسی وجود تسک فعال
             var hasActiveTask = await _context.Tasks_Tbl
                 .AnyAsync(t => t.CrmLeadId == leadId 
@@ -402,15 +240,7 @@ namespace MahERP.DataModelLayer.Services.CoreServices
                             && !t.IsDeleted 
                             && t.Status < 2); // غیر تکمیل
 
-            if (hasActiveTask) return true;
-
-            // بررسی وجود FollowUp فعال
-            var hasActiveFollowUp = await _context.CrmFollowUp_Tbl
-                .AnyAsync(f => f.LeadId == leadId 
-                            && f.IsActive 
-                            && f.Status == 0); // در انتظار
-
-            return hasActiveFollowUp;
+            return hasActiveTask;
         }
 
         /// <summary>
@@ -418,7 +248,7 @@ namespace MahERP.DataModelLayer.Services.CoreServices
         /// </summary>
         public async Task<bool> ValidateOpportunityHasNextActionAsync(int opportunityId)
         {
-            // TODO: پیاده‌سازی بعد از ایجاد Entity CrmOpportunity
+            // TODO: نیاز به بازنویسی با سیستم جدید CRM
             return true;
         }
 

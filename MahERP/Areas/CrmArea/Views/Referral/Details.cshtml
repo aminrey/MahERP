@@ -1,0 +1,248 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.ReferralViewModel
+@{
+    ViewData["Title"] = "جزئیات ارجاع";
+    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-action="ByReferrer" asp-route-contactId="@Model.ReferrerContactId">ارجاعات</a>
+                    </li>
+                    <li class="breadcrumb-item active">جزئیات</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fa fa-users me-2"></i>
+                    جزئیات ارجاع
+                </h4>
+                @if (Model.Status == MahERP.DataModelLayer.Enums.ReferralStatus.Pending)
+                {
+                    <div>
+                        <form asp-action="MarkAsSuccessful" asp-route-id="@Model.Id" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-success">
+                                <i class="fa fa-check me-1"></i>
+                                علامت به عنوان موفق
+                            </button>
+                        </form>
+                        <form asp-action="MarkAsFailed" asp-route-id="@Model.Id" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fa fa-times me-1"></i>
+                                علامت به عنوان ناموفق
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- اطلاعات اصلی -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fa fa-info-circle me-2"></i>
+                            اطلاعات ارجاع
+                        </h6>
+                        <span class="badge fs-6" style="background-color: @Model.StatusColor">
+                            @Model.StatusName
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- معرف -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary bg-opacity-10">
+                                    <h6 class="mb-0">
+                                        <i class="fa fa-user-check me-2"></i>
+                                        معرف
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="mb-3">@Model.ReferrerContactName</h5>
+                                    <a asp-controller="Contact" asp-action="Details" asp-area="ContactArea" asp-route-id="@Model.ReferrerContactId" class="btn btn-outline-primary btn-sm w-100">
+                                        <i class="fa fa-eye me-1"></i>
+                                        مشاهده پروفایل
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- فرد معرفی شده -->
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-header bg-info bg-opacity-10">
+                                    <h6 class="mb-0">
+                                        <i class="fa fa-user-plus me-2"></i>
+                                        فرد معرفی شده
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="mb-2">@Model.ReferredContactName</h5>
+                                    <p class="mb-3">
+                                        <span class="badge bg-secondary">
+                                            @(Model.ReferredContactType == MahERP.DataModelLayer.Enums.ContactType.Lead ? "سرنخ" : 
+                                              Model.ReferredContactType == MahERP.DataModelLayer.Enums.ContactType.Customer ? "مشتری" : "سایر")
+                                        </span>
+                                    </p>
+                                    <a asp-controller="Contact" asp-action="Details" asp-area="ContactArea" asp-route-id="@Model.ReferredContactId" class="btn btn-outline-info btn-sm w-100">
+                                        <i class="fa fa-eye me-1"></i>
+                                        مشاهده پروفایل
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تاریخ -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fa fa-calendar fa-lg text-primary me-3"></i>
+                                <div>
+                                    <small class="text-muted d-block">تاریخ ارجاع</small>
+                                    <strong>@Model.ReferralDatePersian</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (Model.StatusChangeDate.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fa fa-clock fa-lg text-primary me-3"></i>
+                                    <div>
+                                        <small class="text-muted d-block">تاریخ تغییر وضعیت</small>
+                                        <strong>@Model.StatusChangeDate.Value.ToString("yyyy/MM/dd")</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- یادداشت -->
+                    @if (!string.IsNullOrEmpty(Model.Notes))
+                    {
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-2">یادداشت:</h6>
+                            <p class="border-start border-3 border-primary ps-3" style="white-space: pre-wrap;">@Model.Notes</p>
+                        </div>
+                    }
+
+                    <!-- تعاملات مرتبط -->
+                    @if (Model.ReferrerInteractionId.HasValue || Model.ReferredInteractionId.HasValue)
+                    {
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">
+                                <i class="fa fa-handshake me-2"></i>
+                                تعاملات مرتبط
+                            </h6>
+                            @if (Model.ReferrerInteractionId.HasValue)
+                            {
+                                <p class="mb-2">
+                                    <strong>تعامل معرف:</strong>
+                                    <a asp-controller="Interaction" asp-action="Details" asp-route-id="@Model.ReferrerInteractionId">
+                                        مشاهده تعامل #@Model.ReferrerInteractionId
+                                    </a>
+                                </p>
+                            }
+                            @if (Model.ReferredInteractionId.HasValue)
+                            {
+                                <p class="mb-0">
+                                    <strong>تعامل فرد معرفی شده:</strong>
+                                    <a asp-controller="Interaction" asp-action="Details" asp-route-id="@Model.ReferredInteractionId">
+                                        مشاهده تعامل #@Model.ReferredInteractionId
+                                    </a>
+                                </p>
+                            }
+                        </div>
+                    }
+
+                    <!-- وضعیت -->
+                    <div class="alert @(Model.Status == MahERP.DataModelLayer.Enums.ReferralStatus.Successful ? "alert-success" : 
+                                       Model.Status == MahERP.DataModelLayer.Enums.ReferralStatus.Failed ? "alert-danger" : "alert-warning")">
+                        <h6 class="alert-heading">
+                            <i class="fa @(Model.Status == MahERP.DataModelLayer.Enums.ReferralStatus.Successful ? "fa-check-circle" : 
+                                          Model.Status == MahERP.DataModelLayer.Enums.ReferralStatus.Failed ? "fa-times-circle" : "fa-clock") me-2"></i>
+                            وضعیت: @Model.StatusName
+                        </h6>
+                        @if (Model.Status == MahERP.DataModelLayer.Enums.ReferralStatus.Successful)
+                        {
+                            <p class="mb-0">این ارجاع موفق بوده و فرد معرفی شده به مشتری تبدیل شده است.</p>
+                        }
+                        else if (Model.Status == MahERP.DataModelLayer.Enums.ReferralStatus.Failed)
+                        {
+                            <p class="mb-0">این ارجاع موفق نبوده و فرد معرفی شده به مشتری تبدیل نشده است.</p>
+                        }
+                        else
+                        {
+                            <p class="mb-0">این ارجاع در حال بررسی است و هنوز نتیجه‌ای ندارد.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- اطلاعات جانبی -->
+        <div class="col-lg-4">
+            <!-- اقدامات سریع -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fa fa-bolt me-2"></i>
+                        اقدامات سریع
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <a asp-action="ByReferrer" asp-route-contactId="@Model.ReferrerContactId" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                        <i class="fa fa-list me-1"></i>
+                        سایر ارجاعات معرف
+                    </a>
+                    <a asp-controller="Interaction" asp-action="Create" asp-route-contactId="@Model.ReferredContactId" class="btn btn-outline-success btn-sm w-100 mb-2">
+                        <i class="fa fa-plus me-1"></i>
+                        ثبت تعامل با فرد معرفی شده
+                    </a>
+                    <form asp-action="Delete" asp-route-id="@Model.Id" asp-route-referrerContactId="@Model.ReferrerContactId" method="post"
+                          onsubmit="return confirm('آیا از حذف این ارجاع مطمئن هستید؟');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                            <i class="fa fa-trash me-1"></i>
+                            حذف ارجاع
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- اطلاعات ثبت -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fa fa-info-circle me-2"></i>
+                        اطلاعات ثبت
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2 small">
+                        <i class="fa fa-user me-2 text-muted"></i>
+                        <strong>ثبت کننده:</strong> @Model.CreatorName
+                    </p>
+                    <p class="mb-0 small">
+                        <i class="fa fa-calendar me-2 text-muted"></i>
+                        <strong>تاریخ ثبت:</strong> @Model.CreatedDate.ToString("yyyy/MM/dd")
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

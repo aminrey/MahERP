@@ -1,0 +1,155 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.CrmViewModels.GoalViewModel>
+@{
+    ViewData["Title"] = "اهداف فروش " + ViewBag.ContactName;
+    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-controller="Contact" asp-action="Index" asp-area="ContactArea">افراد</a>
+                    </li>
+                    <li class="breadcrumb-item active">اهداف @ViewBag.ContactName</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fa fa-bullseye me-2"></i>
+                    اهداف فروش @ViewBag.ContactName
+                </h4>
+                <a asp-action="Create" asp-route-contactId="@ViewBag.ContactId" class="btn btn-primary">
+                    <i class="fa fa-plus me-1"></i>
+                    هدف جدید
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.Any())
+    {
+        <div class="row">
+            @foreach (var goal in Model)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card shadow-sm h-100 @(goal.IsConverted ? "border-success" : goal.IsActive ? "" : "bg-light")">
+                        @if (goal.IsConverted)
+                        {
+                            <div class="card-header bg-success text-white">
+                                <i class="fa fa-check-circle me-2"></i>
+                                تبدیل شده به خرید
+                            </div>
+                        }
+                        else if (!goal.IsActive)
+                        {
+                            <div class="card-header bg-secondary text-white">
+                                <i class="fa fa-ban me-2"></i>
+                                غیرفعال
+                            </div>
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title">@goal.Title</h5>
+                            
+                            @if (!string.IsNullOrEmpty(goal.ProductName))
+                            {
+                                <p class="mb-2">
+                                    <i class="fa fa-box me-2 text-muted"></i>
+                                    <strong>محصول:</strong> @goal.ProductName
+                                </p>
+                            }
+
+                            @if (!string.IsNullOrEmpty(goal.Description))
+                            {
+                                <p class="card-text text-muted small">
+                                    @(goal.Description.Length > 100 ? goal.Description.Substring(0, 100) + "..." : goal.Description)
+                                </p>
+                            }
+
+                            @if (goal.CurrentLeadStageStatusTitle != null)
+                            {
+                                <div class="mb-3">
+                                    <span class="badge" style="background-color: @(goal.CurrentLeadStageStatusColor ?? "#6c757d")">
+                                        @goal.CurrentLeadStageStatusTitle
+                                    </span>
+                                </div>
+                            }
+
+                            @if (goal.EstimatedValue.HasValue)
+                            {
+                                <p class="mb-2">
+                                    <i class="fa fa-coins me-2 text-warning"></i>
+                                    <strong>ارزش تخمینی:</strong> @goal.EstimatedValueFormatted ریال
+                                </p>
+                            }
+
+                            @if (goal.IsConverted && goal.ActualValue.HasValue)
+                            {
+                                <p class="mb-2">
+                                    <i class="fa fa-money-bill-wave me-2 text-success"></i>
+                                    <strong>ارزش واقعی:</strong> @goal.ActualValueFormatted ریال
+                                </p>
+                                <p class="mb-2 small text-muted">
+                                    <i class="fa fa-calendar-check me-2"></i>
+                                    تاریخ تبدیل: @goal.ConversionDatePersian
+                                </p>
+                            }
+
+                            <hr />
+                            <small class="text-muted d-block mb-2">
+                                <i class="fa fa-user me-2"></i>
+                                @goal.CreatorName
+                            </small>
+                            <small class="text-muted d-block">
+                                <i class="fa fa-calendar me-2"></i>
+                                @goal.CreatedDatePersian
+                            </small>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between">
+                                <a asp-action="Details" asp-route-id="@goal.Id" class="btn btn-sm btn-outline-primary">
+                                    <i class="fa fa-eye me-1"></i>
+                                    جزئیات
+                                </a>
+                                @if (!goal.IsConverted && goal.IsActive)
+                                {
+                                    <form asp-action="MarkAsConverted" asp-route-id="@goal.Id" method="post" class="d-inline"
+                                          onsubmit="return confirm('آیا این هدف به خرید تبدیل شده است؟');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="fa fa-check me-1"></i>
+                                            تبدیل به خرید
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="fa fa-bullseye fa-3x mb-3"></i>
+                <p>هیچ هدفی برای این فرد تعریف نشده است</p>
+                <a asp-action="Create" asp-route-contactId="@ViewBag.ContactId" class="btn btn-primary">
+                    <i class="fa fa-plus me-1"></i>
+                    تعریف اولین هدف
+                </a>
+            </div>
+        </div>
+    }
+</div>

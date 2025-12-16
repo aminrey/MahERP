@@ -131,66 +131,58 @@ namespace MahERP.DataModelLayer
         /// </summary>
         public DbSet<TaskSettingsChangeLog> TaskSettingsChangeLog_Tbl { get; set; }
 
-        // CRM
-        public DbSet<CRMInteraction> CRMInteraction_Tbl { get; set; }
-        public DbSet<CRMAttachment> CRMAttachment_Tbl { get; set; }
-        public DbSet<CRMComment> CRMComment_Tbl { get; set; }
-        public DbSet<CRMParticipant> CRMParticipant_Tbl { get; set; }
-        public DbSet<CRMTeam> CRMTeam_Tbl { get; set; }
-        public DbSet<StakeholderCRM> StakeholderCRM_Tbl { get; set; }
-        public DbSet<TaskCRMDetails> TaskCRMDetails_Tbl { get; set; }
+        // CRM - OLD (حذف شده یا نگهداری برای سازگاری)
+        // public DbSet<CRMInteraction> CRMInteraction_Tbl { get; set; }
+        // public DbSet<CRMAttachment> CRMAttachment_Tbl { get; set; }
+        // public DbSet<CRMComment> CRMComment_Tbl { get; set; }
+        // public DbSet<CRMParticipant> CRMParticipant_Tbl { get; set; }
+        // public DbSet<CRMTeam> CRMTeam_Tbl { get; set; }
+        // public DbSet<StakeholderCRM> StakeholderCRM_Tbl { get; set; }
+        // public DbSet<TaskCRMDetails> TaskCRMDetails_Tbl { get; set; }
 
-        // ⭐⭐⭐ NEW: CRM Lead Management System
-        /// <summary>
-        /// وضعیت‌های سرنخ CRM
-        /// </summary>
-        public DbSet<CrmLeadStatus> CrmLeadStatus_Tbl { get; set; }
+        // ⭐⭐⭐ NEW CRM System ⭐⭐⭐
         
         /// <summary>
-        /// ⭐ منابع سرنخ CRM
+        /// وضعیت لید در قیف فروش (استاتیک)
+        /// آگاهی → علاقه‌مندی → ارزیابی → تصمیم‌گیری → خرید
         /// </summary>
-        public DbSet<CrmLeadSource> CrmLeadSource_Tbl { get; set; }
+        public DbSet<LeadStageStatus> LeadStageStatus_Tbl { get; set; }
         
         /// <summary>
-        /// ⭐ دلایل از دست رفتن
+        /// وضعیت مشتری بعد از خرید (استاتیک)
+        /// حفظ مشتری، ارجاع/توصیه، وفادارسازی، VIP
         /// </summary>
-        public DbSet<CrmLostReason> CrmLostReason_Tbl { get; set; }
+        public DbSet<PostPurchaseStage> PostPurchaseStage_Tbl { get; set; }
         
         /// <summary>
-        /// سرنخ‌های CRM
+        /// انواع تعامل (CRUD توسط ادمین)
         /// </summary>
-        public DbSet<CrmLead> CrmLead_Tbl { get; set; }
+        public DbSet<InteractionType> InteractionType_Tbl { get; set; }
         
         /// <summary>
-        /// تعاملات سرنخ CRM
+        /// اهداف فروش
         /// </summary>
-        public DbSet<CrmLeadInteraction> CrmLeadInteraction_Tbl { get; set; }
+        public DbSet<Goal> Goal_Tbl { get; set; }
         
         /// <summary>
-        /// پیگیری‌های CRM
+        /// تعاملات
         /// </summary>
-        public DbSet<CrmFollowUp> CrmFollowUp_Tbl { get; set; }
+        public DbSet<Interaction> Interaction_Tbl { get; set; }
+        
+        /// <summary>
+        /// جدول واسط تعامل-هدف (M:N)
+        /// </summary>
+        public DbSet<InteractionGoal> InteractionGoal_Tbl { get; set; }
+        
+        /// <summary>
+        /// توصیه/ارجاع مشتریان
+        /// </summary>
+        public DbSet<Referral> Referral_Tbl { get; set; }
 
-        // ⭐⭐⭐ NEW: CRM Pipeline & Opportunity System
-        /// <summary>
-        /// مراحل Pipeline فروش
-        /// </summary>
-        public DbSet<CrmPipelineStage> CrmPipelineStage_Tbl { get; set; }
-        
-        /// <summary>
-        /// فرصت‌های فروش (Opportunity)
-        /// </summary>
-        public DbSet<CrmOpportunity> CrmOpportunity_Tbl { get; set; }
-        
-        /// <summary>
-        /// فعالیت‌های فرصت فروش
-        /// </summary>
-        public DbSet<CrmOpportunityActivity> CrmOpportunityActivity_Tbl { get; set; }
-        
-        /// <summary>
-        /// محصولات/خدمات فرصت فروش
-        /// </summary>
-        public DbSet<CrmOpportunityProduct> CrmOpportunityProduct_Tbl { get; set; }
+        // ⭐⭐⭐ OLD CRM - حذف شده ⭐⭐⭐
+        // CrmLeadStatus_Tbl, CrmLeadSource_Tbl, CrmLostReason_Tbl, CrmLead_Tbl
+        // CrmLeadInteraction_Tbl, CrmFollowUp_Tbl, CrmPipelineStage_Tbl
+        // CrmOpportunity_Tbl, CrmOpportunityActivity_Tbl, CrmOpportunityProduct_Tbl
 
         // SMS Management
         public DbSet<SmsProvider> SmsProvider_Tbl { get; set; }

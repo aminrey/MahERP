@@ -1,0 +1,268 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.GoalViewModel
+@{
+    ViewData["Title"] = "جزئیات هدف";
+    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-action="ByContact" asp-route-contactId="@Model.ContactId">اهداف</a>
+                    </li>
+                    <li class="breadcrumb-item active">جزئیات</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fa fa-bullseye me-2"></i>
+                    @Model.Title
+                    @if (Model.IsConverted)
+                    {
+                        <span class="badge bg-success ms-2">تبدیل شده</span>
+                    }
+                    else if (!Model.IsActive)
+                    {
+                        <span class="badge bg-secondary ms-2">غیرفعال</span>
+                    }
+                </h4>
+                <div>
+                    @if (!Model.IsConverted && Model.IsActive)
+                    {
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#conversionModal">
+                            <i class="fa fa-check me-1"></i>
+                            تبدیل به خرید
+                        </button>
+                    }
+                    <form asp-action="Delete" asp-route-id="@Model.Id" asp-route-contactId="@Model.ContactId" method="post" class="d-inline"
+                          onsubmit="return confirm('آیا از غیرفعال کردن این هدف مطمئن هستید؟');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="fa fa-ban me-1"></i>
+                            غیرفعال کردن
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- اطلاعات اصلی -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fa fa-info-circle me-2"></i>
+                        اطلاعات هدف
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <h3 class="mb-4">@Model.Title</h3>
+
+                    @if (!string.IsNullOrEmpty(Model.ProductName))
+                    {
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-2">محصول/خدمت:</h6>
+                            <p class="fs-5 text-primary">
+                                <i class="fa fa-box me-2"></i>
+                                @Model.ProductName
+                            </p>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-2">توضیحات:</h6>
+                            <p class="border-start border-3 border-primary ps-3" style="white-space: pre-wrap;">@Model.Description</p>
+                        </div>
+                    }
+
+                    @if (Model.CurrentLeadStageStatusTitle != null)
+                    {
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-2">وضعیت فعلی در قیف فروش:</h6>
+                            <span class="badge fs-6" style="background-color: @(Model.CurrentLeadStageStatusColor ?? "#6c757d")">
+                                @Model.CurrentLeadStageStatusTitle
+                            </span>
+                        </div>
+                    }
+
+                    <div class="row mb-4">
+                        @if (Model.EstimatedValue.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="card bg-warning bg-opacity-10 border-warning">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-2">
+                                            <i class="fa fa-coins me-2"></i>
+                                            ارزش تخمینی
+                                        </h6>
+                                        <h4 class="mb-0">@Model.EstimatedValueFormatted ریال</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (Model.IsConverted && Model.ActualValue.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="card bg-success bg-opacity-10 border-success">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-2">
+                                            <i class="fa fa-money-bill-wave me-2"></i>
+                                            ارزش واقعی
+                                        </h6>
+                                        <h4 class="mb-0">@Model.ActualValueFormatted ریال</h4>
+                                        <small class="text-muted">
+                                            تاریخ تبدیل: @Model.ConversionDatePersian
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (Model.IsConverted)
+                    {
+                        <div class="alert alert-success">
+                            <h6 class="alert-heading">
+                                <i class="fa fa-check-circle me-2"></i>
+                                این هدف به خرید تبدیل شده است
+                            </h6>
+                            <p class="mb-0">
+                                تاریخ تبدیل: @Model.ConversionDatePersian
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- تعاملات مرتبط -->
+            @if (Model.InteractionsCount > 0)
+            {
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fa fa-handshake me-2"></i>
+                            تعاملات مرتبط
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">
+                            تعداد تعاملات مرتبط با این هدف: <strong class="text-primary">@Model.InteractionsCount</strong>
+                        </p>
+                        <a asp-controller="Interaction" asp-action="ByContact" asp-route-contactId="@Model.ContactId" class="btn btn-outline-primary btn-sm">
+                            <i class="fa fa-eye me-1"></i>
+                            مشاهده تعاملات
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- اطلاعات جانبی -->
+        <div class="col-lg-4">
+            <!-- اطلاعات هدف -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fa fa-user me-2"></i>
+                        @Model.TargetType
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>نام:</strong> @Model.TargetName
+                    </p>
+                    <div class="mt-3">
+                        @if (Model.ContactId.HasValue)
+                        {
+                            <a asp-controller="Contact" asp-action="Details" asp-area="ContactArea" asp-route-id="@Model.ContactId" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                                <i class="fa fa-eye me-1"></i>
+                                مشاهده پروفایل
+                            </a>
+                            <a asp-action="ByContact" asp-route-contactId="@Model.ContactId" class="btn btn-outline-secondary btn-sm w-100">
+                                <i class="fa fa-list me-1"></i>
+                                سایر اهداف
+                            </a>
+                        }
+                        else if (Model.OrganizationId.HasValue)
+                        {
+                            <a asp-controller="Organization" asp-action="Details" asp-area="ContactArea" asp-route-id="@Model.OrganizationId" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                                <i class="fa fa-eye me-1"></i>
+                                مشاهده سازمان
+                            </a>
+                            <a asp-action="ByOrganization" asp-route-organizationId="@Model.OrganizationId" class="btn btn-outline-secondary btn-sm w-100">
+                                <i class="fa fa-list me-1"></i>
+                                سایر اهداف
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- اطلاعات ثبت -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fa fa-info-circle me-2"></i>
+                        اطلاعات ثبت
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2 small">
+                        <i class="fa fa-user me-2 text-muted"></i>
+                        <strong>ایجاد کننده:</strong> @Model.CreatorName
+                    </p>
+                    <p class="mb-0 small">
+                        <i class="fa fa-calendar me-2 text-muted"></i>
+                        <strong>تاریخ ایجاد:</strong> @Model.CreatedDatePersian
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تبدیل به خرید -->
+<div class="modal fade" id="conversionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="MarkAsConverted" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fa fa-check-circle me-2"></i>
+                        تبدیل به خرید
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>آیا این هدف به خرید تبدیل شده است؟</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">ارزش واقعی معامله (ریال)</label>
+                        <input type="number" name="actualValue" class="form-control" placeholder="@Model.EstimatedValue" min="0" />
+                        <small class="text-muted">در صورت خالی گذاشتن، ارزش تخمینی ثبت می‌شود</small>
+                    </div>
+
+                    <div class="alert alert-info small mb-0">
+                        <i class="fa fa-info-circle me-2"></i>
+                        پس از تبدیل، این هدف به عنوان یک فروش موفق ثبت می‌شود
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fa fa-check me-1"></i>
+                        تایید تبدیل
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,4 +1,5 @@
 ﻿using MahERP.DataModelLayer.Entities.Contacts;
+using MahERP.DataModelLayer.Enums;
 using MahERP.DataModelLayer.ViewModels.ContactViewModels;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -74,6 +75,15 @@ namespace MahERP.DataModelLayer.Repository.ContactRepository
             return await query.FirstOrDefaultAsync(c => c.Id == id);
         }
 
+        /// <summary>
+        /// دریافت Contact به صورت ساده (برای CRM)
+        /// </summary>
+        public async Task<Contact?> GetByIdAsync(int id)
+        {
+            return await _context.Contact_Tbl
+                .FirstOrDefaultAsync(c => c.Id == id);
+        }
+
         public List<Contact> SearchContacts(string searchTerm, byte? gender = null, bool includeInactive = false)
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
@@ -121,6 +131,36 @@ namespace MahERP.DataModelLayer.Repository.ContactRepository
                      (c.NationalCode != null && c.NationalCode.Contains(searchTerm)) ||
                      (c.PrimaryEmail != null && c.PrimaryEmail.Contains(searchTerm)) ||
                      c.Phones.Any(p => p.PhoneNumber.Contains(searchTerm))))
+                .OrderBy(c => c.LastName)
+                .ThenBy(c => c.FirstName)
+                .Take(maxResults)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// جستجوی Async افراد با فیلتر ContactType (برای CRM)
+        /// </summary>
+        public async Task<List<Contact>> SearchAsync(string searchTerm, ContactType? contactType = null, int maxResults = 20)
+        {
+            var query = _context.Contact_Tbl
+                .Where(c => c.IsActive);
+
+            // فیلتر بر اساس ContactType
+            if (contactType.HasValue)
+                query = query.Where(c => c.ContactType == contactType.Value);
+
+            // اگر searchTerm داده شده، جستجو کن
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                query = query.Where(c =>
+                    c.FirstName.Contains(searchTerm) ||
+                    c.LastName.Contains(searchTerm) ||
+                    (c.NationalCode != null && c.NationalCode.Contains(searchTerm)) ||
+                    (c.PrimaryEmail != null && c.PrimaryEmail.Contains(searchTerm)) ||
+                    c.Phones.Any(p => p.PhoneNumber.Contains(searchTerm)));
+            }
+
+            return await query
                 .OrderBy(c => c.LastName)
                 .ThenBy(c => c.FirstName)
                 .Take(maxResults)

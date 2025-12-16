@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using MahERP.DataModelLayer.AcControl;
 using MahERP.DataModelLayer.Entities.AcControl;
+using MahERP.DataModelLayer.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace MahERP.DataModelLayer.Entities.Contacts
@@ -17,6 +18,16 @@ namespace MahERP.DataModelLayer.Entities.Contacts
     {
         [Key]
         public int Id { get; set; }
+
+        /// <summary>
+        /// نوع Contact - تعیین وضعیت فرد در سیستم
+        /// Lead = سرنخ (هنوز خرید نکرده)
+        /// Customer = مشتری (خرید کرده)
+        /// Partner = شریک تجاری
+        /// Other = سایر
+        /// </summary>
+        [Display(Name = "نوع")]
+        public ContactType ContactType { get; set; } = ContactType.Lead;
 
         /// <summary>
         /// نام

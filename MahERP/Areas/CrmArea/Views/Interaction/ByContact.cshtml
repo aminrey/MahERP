@@ -1,0 +1,212 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.CrmViewModels.InteractionViewModel>
+@{
+    ViewData["Title"] = "تعاملات " + ViewBag.ContactName;
+    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-controller="Contact" asp-action="Index" asp-area="ContactArea">افراد</a>
+                    </li>
+                    <li class="breadcrumb-item active">تعاملات @ViewBag.ContactName</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fa fa-handshake me-2"></i>
+                    تعاملات @ViewBag.ContactName
+                </h4>
+                <a asp-action="Create" asp-route-contactId="@ViewBag.ContactId" class="btn btn-primary">
+                    <i class="fa fa-plus me-1"></i>
+                    ثبت تعامل جدید
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.Any())
+    {
+        <!-- Timeline View -->
+        <div class="timeline">
+            @foreach (var item in Model.OrderByDescending(i => i.InteractionDate))
+            {
+                <div class="timeline-item mb-4">
+                    <div class="timeline-marker" style="background-color: @(item.InteractionTypeColor ?? "#6c757d")">
+                        <i class="fa fa-circle"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="card shadow-sm">
+                            <div class="card-header" style="background-color: @(item.InteractionTypeColor ?? "#6c757d")20">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge me-2" style="background-color: @(item.InteractionTypeColor ?? "#6c757d")">
+                                            @item.InteractionTypeName
+                                        </span>
+                                        <span class="badge" style="background-color: @(item.LeadStageColor ?? "#6c757d")">
+                                            @item.LeadStageName
+                                        </span>
+                                        @if (item.PostPurchaseStageName != null)
+                                        {
+                                            <span class="badge ms-1" style="background-color: @(item.PostPurchaseStageColor ?? "#6c757d")">
+                                                @item.PostPurchaseStageName
+                                            </span>
+                                        }
+                                    </div>
+                                    <small class="text-muted">
+                                        @item.InteractionDatePersian - @item.InteractionTime
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">@item.Subject</h5>
+                                @if (!string.IsNullOrEmpty(item.Description))
+                                {
+                                    <p class="card-text">@item.Description</p>
+                                }
+
+                                @if (item.DurationMinutes.HasValue)
+                                {
+                                    <p class="mb-2">
+                                        <i class="fa fa-clock me-2"></i>
+                                        <small class="text-muted">مدت زمان: @item.DurationMinutes دقیقه</small>
+                                    </p>
+                                }
+
+                                @if (!string.IsNullOrEmpty(item.Result))
+                                {
+                                    <div class="alert alert-success mb-2">
+                                        <strong>نتیجه:</strong> @item.Result
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(item.NextAction))
+                                {
+                                    <div class="alert alert-info mb-2">
+                                        <strong>اقدام بعدی:</strong> @item.NextAction
+                                        @if (item.NextActionDate.HasValue)
+                                        {
+                                            <br />
+                                            <small>تاریخ: @item.NextActionDatePersian</small>
+                                        }
+                                    </div>
+                                }
+
+                                @if (item.Goals != null && item.Goals.Any())
+                                {
+                                    <div class="mt-2">
+                                        <strong class="me-2">اهداف مرتبط:</strong>
+                                        @foreach (var goal in item.Goals)
+                                        {
+                                            <span class="badge bg-info me-1">
+                                                @goal.Title
+                                                @if (!string.IsNullOrEmpty(goal.ProductName))
+                                                {
+                                                    <small>(@goal.ProductName)</small>
+                                                }
+                                            </span>
+                                        }
+                                    </div>
+                                }
+
+                                <div class="mt-3 d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fa fa-user me-1"></i>
+                                        ثبت شده توسط: @item.CreatorName
+                                        <br />
+                                        <i class="fa fa-calendar me-1"></i>
+                                        @item.CreatedDatePersian
+                                    </small>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary">
+                                            <i class="fa fa-eye me-1"></i>
+                                            جزئیات
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@item.Id" asp-route-contactId="@ViewBag.ContactId" method="post" class="d-inline"
+                                              onsubmit="return confirm('آیا از حذف این تعامل مطمئن هستید؟');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-danger">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="fa fa-inbox fa-3x mb-3"></i>
+                <p>هیچ تعاملی برای این فرد ثبت نشده است</p>
+                <a asp-action="Create" asp-route-contactId="@ViewBag.ContactId" class="btn btn-primary">
+                    <i class="fa fa-plus me-1"></i>
+                    ثبت اولین تعامل
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+@section Styles {
+    <style>
+        .timeline {
+            position: relative;
+            padding: 0 0 0 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e0e0e0;
+        }
+
+        .timeline-item {
+            position: relative;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: -25px;
+            top: 10px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #fff;
+            box-shadow: 0 0 0 2px #e0e0e0;
+        }
+
+        .timeline-marker i {
+            font-size: 8px;
+            color: white;
+        }
+
+        .timeline-content {
+            margin-left: 20px;
+        }
+    </style>
+}

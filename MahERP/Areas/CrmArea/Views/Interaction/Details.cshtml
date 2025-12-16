@@ -1,0 +1,251 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.InteractionViewModel
+@{
+    ViewData["Title"] = "جزئیات تعامل";
+    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">تعاملات</a>
+                    </li>
+                    <li class="breadcrumb-item active">جزئیات</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fa fa-handshake me-2"></i>
+                    جزئیات تعامل
+                </h4>
+                <div>
+                    <a asp-action="ByContact" asp-route-contactId="@Model.ContactId" class="btn btn-outline-secondary">
+                        <i class="fa fa-list me-1"></i>
+                        تعاملات این فرد
+                    </a>
+                    <form asp-action="Delete" asp-route-id="@Model.Id" asp-route-contactId="@Model.ContactId" method="post" class="d-inline"
+                          onsubmit="return confirm('آیا از حذف این تعامل مطمئن هستید؟');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="fa fa-trash me-1"></i>
+                            حذف
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- اطلاعات اصلی -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header" style="background-color: @(Model.InteractionTypeColor ?? "#6c757d")20">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge me-2" style="background-color: @(Model.InteractionTypeColor ?? "#6c757d")">
+                                @Model.InteractionTypeName
+                            </span>
+                            <span class="badge" style="background-color: @(Model.LeadStageColor ?? "#6c757d")">
+                                @Model.LeadStageName
+                            </span>
+                            @if (Model.PostPurchaseStageName != null)
+                            {
+                                <span class="badge ms-1" style="background-color: @(Model.PostPurchaseStageColor ?? "#6c757d")">
+                                    @Model.PostPurchaseStageName
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h3 class="mb-4">@Model.Subject</h3>
+
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-2">توضیحات:</h6>
+                            <p class="border-start border-3 border-primary ps-3" style="white-space: pre-wrap;">@Model.Description</p>
+                        </div>
+                    }
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fa fa-calendar fa-lg text-primary me-3"></i>
+                                <div>
+                                    <small class="text-muted d-block">تاریخ تعامل</small>
+                                    <strong>@Model.InteractionDatePersian</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fa fa-clock fa-lg text-primary me-3"></i>
+                                <div>
+                                    <small class="text-muted d-block">ساعت</small>
+                                    <strong>@Model.InteractionTime</strong>
+                                </div>
+                            </div>
+                        </div>
+                        @if (Model.DurationMinutes.HasValue)
+                        {
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fa fa-hourglass-half fa-lg text-primary me-3"></i>
+                                    <div>
+                                        <small class="text-muted d-block">مدت زمان</small>
+                                        <strong>@Model.DurationMinutes دقیقه</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Result))
+                    {
+                        <div class="alert alert-success">
+                            <h6 class="alert-heading">
+                                <i class="fa fa-check-circle me-2"></i>
+                                نتیجه تعامل
+                            </h6>
+                            <p class="mb-0" style="white-space: pre-wrap;">@Model.Result</p>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.NextAction))
+                    {
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">
+                                <i class="fa fa-tasks me-2"></i>
+                                اقدام بعدی
+                            </h6>
+                            <p class="mb-0">@Model.NextAction</p>
+                            @if (Model.NextActionDate.HasValue)
+                            {
+                                <hr />
+                                <p class="mb-0">
+                                    <i class="fa fa-calendar-alt me-2"></i>
+                                    <strong>تاریخ:</strong> @Model.NextActionDatePersian
+                                </p>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- اهداف مرتبط -->
+            @if (Model.Goals != null && Model.Goals.Any())
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fa fa-bullseye me-2"></i>
+                            اهداف مرتبط با این تعامل
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            @foreach (var goal in Model.Goals)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">@goal.Title</h6>
+                                            @if (!string.IsNullOrEmpty(goal.ProductName))
+                                            {
+                                                <small class="text-muted">محصول: @goal.ProductName</small>
+                                            }
+                                        </div>
+                                        <a asp-controller="Goal" asp-action="Details" asp-route-id="@goal.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="fa fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- اطلاعات جانبی -->
+        <div class="col-lg-4">
+            <!-- اطلاعات فرد -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fa fa-user me-2"></i>
+                        اطلاعات فرد
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>نام:</strong> @Model.ContactName
+                    </p>
+                    <p class="mb-2">
+                        <strong>نوع:</strong> 
+                        <span class="badge bg-secondary">@Model.ContactTypeName</span>
+                    </p>
+                    <div class="mt-3">
+                        <a asp-controller="Contact" asp-action="Details" asp-area="ContactArea" asp-route-id="@Model.ContactId" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fa fa-eye me-1"></i>
+                            مشاهده پروفایل
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ارجاع -->
+            @if (Model.HasReferral || Model.IsReferred)
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fa fa-users me-2"></i>
+                            اطلاعات ارجاع
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.HasReferral)
+                        {
+                            <div class="alert alert-success small mb-0">
+                                <i class="fa fa-check-circle me-2"></i>
+                                این مشتری کسی را معرفی کرده است
+                            </div>
+                        }
+                        @if (Model.IsReferred)
+                        {
+                            <div class="alert alert-info small mb-0 @(Model.HasReferral ? "mt-2" : "")">
+                                <i class="fa fa-info-circle me-2"></i>
+                                این لید توسط کسی معرفی شده است
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- اطلاعات ثبت -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fa fa-info-circle me-2"></i>
+                        اطلاعات ثبت
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2 small">
+                        <i class="fa fa-user me-2 text-muted"></i>
+                        <strong>ثبت کننده:</strong> @Model.CreatorName
+                    </p>
+                    <p class="mb-0 small">
+                        <i class="fa fa-calendar me-2 text-muted"></i>
+                        <strong>تاریخ ثبت:</strong> @Model.CreatedDatePersian
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

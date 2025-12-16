@@ -1,0 +1,337 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.InteractionCreateViewModel
+@{
+    ViewData["Title"] = "ثبت تعامل جدید";
+    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">تعاملات</a>
+                    </li>
+                    <li class="breadcrumb-item active">ثبت تعامل جدید</li>
+                </ol>
+            </nav>
+            <h4 class="mb-0">
+                <i class="fa fa-plus-circle me-2"></i>
+                ثبت تعامل جدید
+                @if (ViewBag.ContactName != null)
+                {
+                    <span class="text-muted"> - @ViewBag.ContactName</span>
+                }
+            </h4>
+        </div>
+    </div>
+
+    <form asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <!-- اطلاعات اصلی -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fa fa-info-circle me-2"></i>
+                            اطلاعات تعامل
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Contact -->
+                        <div class="mb-3">
+                            <label asp-for="ContactId" class="form-label">فرد/مشتری <span class="text-danger">*</span></label>
+                            <select asp-for="ContactId" class="form-select" id="contactSelect" required>
+                                <option value="">-- انتخاب کنید --</option>
+                            </select>
+                            <span asp-validation-for="ContactId" class="text-danger"></span>
+                            <small class="text-muted">شروع به تایپ کنید تا جستجو انجام شود</small>
+                        </div>
+
+                        <!-- نوع تعامل -->
+                        <div class="mb-3">
+                            <label asp-for="InteractionTypeId" class="form-label">نوع تعامل <span class="text-danger">*</span></label>
+                            <select asp-for="InteractionTypeId" class="form-select" id="interactionTypeSelect" required>
+                                <option value="">-- انتخاب کنید --</option>
+                                @foreach (var type in Model.InteractionTypes)
+                                {
+                                    <option value="@type.Id" data-stage="@type.LeadStageStatusTitle">
+                                        @type.Title
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="InteractionTypeId" class="text-danger"></span>
+                            <div id="leadStageInfo" class="mt-2" style="display: none;">
+                                <small class="text-muted">مرحله لید: <span id="leadStageText" class="badge"></span></small>
+                            </div>
+                        </div>
+
+                        <!-- موضوع -->
+                        <div class="mb-3">
+                            <label asp-for="Subject" class="form-label">موضوع تعامل <span class="text-danger">*</span></label>
+                            <input asp-for="Subject" class="form-control" placeholder="مثال: تماس تلفنی برای پیگیری" required />
+                            <span asp-validation-for="Subject" class="text-danger"></span>
+                        </div>
+
+                        <!-- توضیحات -->
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label">توضیحات</label>
+                            <textarea asp-for="Description" class="form-control" rows="4" placeholder="جزئیات تعامل..."></textarea>
+                        </div>
+
+                        <!-- تاریخ و زمان -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="InteractionDatePersian" class="form-label">تاریخ تعامل <span class="text-danger">*</span></label>
+                                    <input asp-for="InteractionDatePersian" class="form-control date-picker" required />
+                                    <span asp-validation-for="InteractionDatePersian" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="InteractionTime" class="form-label">ساعت</label>
+                                    <input asp-for="InteractionTime" type="time" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="DurationMinutes" class="form-label">مدت (دقیقه)</label>
+                                    <input asp-for="DurationMinutes" type="number" class="form-control" min="0" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- نتیجه -->
+                        <div class="mb-3">
+                            <label asp-for="Result" class="form-label">نتیجه تعامل</label>
+                            <textarea asp-for="Result" class="form-control" rows="2" placeholder="نتیجه و دستاوردهای این تعامل..."></textarea>
+                        </div>
+
+                        <!-- اقدام بعدی -->
+                        <div class="mb-3">
+                            <label asp-for="NextAction" class="form-label">اقدام بعدی</label>
+                            <input asp-for="NextAction" class="form-control" placeholder="مثال: ارسال پیشنهاد قیمت" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="NextActionDatePersian" class="form-label">تاریخ اقدام بعدی</label>
+                            <input asp-for="NextActionDatePersian" class="form-control date-picker" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- اطلاعات جانبی -->
+            <div class="col-lg-4">
+                <!-- بعد از خرید -->
+                <div class="card shadow-sm mb-4" id="postPurchaseCard" style="display: none;">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fa fa-shopping-cart me-2"></i>
+                            مرحله بعد از خرید
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="PostPurchaseStageId" class="form-label">مرحله</label>
+                            <select asp-for="PostPurchaseStageId" class="form-select">
+                                <option value="">-- انتخاب کنید --</option>
+                                @foreach (var stage in Model.PostPurchaseStages)
+                                {
+                                    <option value="@stage.Id">@stage.Title</option>
+                                }
+                            </select>
+                            <small class="text-muted">فقط برای مشتریان</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- اهداف مرتبط -->
+                <div class="card shadow-sm mb-4" id="goalsCard" style="display: none;">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fa fa-bullseye me-2"></i>
+                            اهداف مرتبط
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="goalsList">
+                            <p class="text-muted small">ابتدا فرد را انتخاب کنید</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ارجاع -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fa fa-users me-2"></i>
+                            ارجاع/توصیه
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input asp-for="HasReferral" class="form-check-input" type="checkbox" id="hasReferralCheck" />
+                                <label asp-for="HasReferral" class="form-check-label">
+                                    این مشتری کسی را معرفی کرده
+                                </label>
+                            </div>
+                        </div>
+                        <div id="referralSection" style="display: none;">
+                            <label class="form-label">فرد معرفی شده</label>
+                            <select asp-for="ReferredContactId" class="form-select" id="referredContactSelect">
+                                <option value="">-- انتخاب کنید --</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3 mt-3">
+                            <div class="form-check">
+                                <input asp-for="IsReferred" class="form-check-input" type="checkbox" id="isReferredCheck" />
+                                <label asp-for="IsReferred" class="form-check-label">
+                                    این لید توسط کسی معرفی شده
+                                </label>
+                            </div>
+                        </div>
+                        <div id="referrerSection" style="display: none;">
+                            <label class="form-label">معرف</label>
+                            <select asp-for="ReferrerContactId" class="form-select" id="referrerContactSelect">
+                                <option value="">-- انتخاب کنید --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="fa fa-arrow-right me-1"></i>
+                        بازگشت
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save me-1"></i>
+                        ثبت تعامل
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function() {
+            // تاریخ شمسی
+            $(".date-picker").persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true
+            });
+
+            // Contact Select2
+            $("#contactSelect").select2({
+                placeholder: "جستجوی فرد یا مشتری...",
+                ajax: {
+                    url: '@Url.Action("SearchContacts", "CrmAjax")',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { term: params.term };
+                    },
+                    processResults: function (data) {
+                        return { results: data.results };
+                    }
+                }
+            });
+
+            // وقتی Contact انتخاب شد
+            $("#contactSelect").on('change', function() {
+                var contactId = $(this).val();
+                if (contactId) {
+                    // دریافت اهداف
+                    $.get('@Url.Action("GetGoalsByContact", "CrmAjax")', { contactId: contactId }, function(goals) {
+                        var html = '';
+                        if (goals.length > 0) {
+                            goals.forEach(function(goal) {
+                                html += '<div class="form-check mb-2">';
+                                html += '<input class="form-check-input" type="checkbox" name="GoalIds" value="' + goal.id + '" id="goal' + goal.id + '">';
+                                html += '<label class="form-check-label" for="goal' + goal.id + '">' + goal.title;
+                                if (goal.productName) html += ' <small class="text-muted">(' + goal.productName + ')</small>';
+                                html += '</label></div>';
+                            });
+                            $("#goalsCard").show();
+                        } else {
+                            html = '<p class="text-muted small">هیچ هدفی برای این فرد تعریف نشده</p>';
+                            $("#goalsCard").show();
+                        }
+                        $("#goalsList").html(html);
+                    });
+
+                    // بررسی نوع Contact
+                    $.get('@Url.Action("GetContactType", "CrmAjax")', { contactId: contactId }, function(data) {
+                        if (data.isCustomer) {
+                            $("#postPurchaseCard").show();
+                        } else {
+                            $("#postPurchaseCard").hide();
+                        }
+                    });
+                }
+            });
+
+            // نمایش مرحله لید
+            $("#interactionTypeSelect").on('change', function() {
+                var selectedOption = $(this).find('option:selected');
+                var stage = selectedOption.data('stage');
+                if (stage) {
+                    $("#leadStageText").text(stage);
+                    $("#leadStageInfo").show();
+                } else {
+                    $("#leadStageInfo").hide();
+                }
+            });
+
+            // ارجاع
+            $("#hasReferralCheck").on('change', function() {
+                if ($(this).is(':checked')) {
+                    $("#referralSection").show();
+                    $("#isReferredCheck").prop('checked', false);
+                    $("#referrerSection").hide();
+                } else {
+                    $("#referralSection").hide();
+                }
+            });
+
+            $("#isReferredCheck").on('change', function() {
+                if ($(this).is(':checked')) {
+                    $("#referrerSection").show();
+                    $("#hasReferralCheck").prop('checked', false);
+                    $("#referralSection").hide();
+                } else {
+                    $("#referrerSection").hide();
+                }
+            });
+
+            // Select2 برای ارجاعات
+            $("#referredContactSelect, #referrerContactSelect").select2({
+                placeholder: "جستجوی فرد...",
+                ajax: {
+                    url: '@Url.Action("SearchContacts", "CrmAjax")',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { term: params.term };
+                    },
+                    processResults: function (data) {
+                        return { results: data.results };
+                    }
+                }
+            });
+        });
+    </script>
+}

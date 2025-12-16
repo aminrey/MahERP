@@ -1,0 +1,321 @@
+﻿@{
+    ViewData["Title"] = "مدیریت مراحل";
+    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-0">
+                <i class="fa fa-layer-group me-2"></i>
+                مدیریت مراحل
+            </h4>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- مراحل قیف فروش (Lead Stages) -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fa fa-filter me-2"></i>
+                            مراحل قیف فروش
+                        </h5>
+                        <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addLeadStageModal">
+                            <i class="fa fa-plus me-1"></i>
+                            افزودن
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        مراحلی که یک سرنخ (Lead) در مسیر تبدیل به مشتری طی می‌کند
+                    </p>
+                    <div id="leadStagesList" class="list-group">
+                        <!-- این لیست با AJAX پر می‌شود -->
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">در حال بارگذاری...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- مراحل بعد از خرید (Post-Purchase Stages) -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fa fa-shopping-cart me-2"></i>
+                            مراحل بعد از خرید
+                        </h5>
+                        <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addPostPurchaseModal">
+                            <i class="fa fa-plus me-1"></i>
+                            افزودن
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        مراحلی که مشتری بعد از خرید برای پشتیبانی و نگهداری طی می‌کند
+                    </p>
+                    <div id="postPurchaseStagesList" class="list-group">
+                        <!-- این لیست با AJAX پر می‌شود -->
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="visually-hidden">در حال بارگذاری...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- راهنما -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">
+                <i class="fa fa-lightbulb me-2"></i>
+                راهنما
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>مراحل قیف فروش</h6>
+                    <p class="small mb-2">
+                        این مراحل نشان می‌دهند که یک سرنخ (Lead) در چه مرحله‌ای از فرآیند خرید است:
+                    </p>
+                    <ul class="small">
+                        <li><strong>آگاهی:</strong> سرنخ با محصول/خدمت شما آشنا شده</li>
+                        <li><strong>علاقه‌مندی:</strong> سرنخ علاقه نشان داده و اطلاعات بیشتری می‌خواهد</li>
+                        <li><strong>بررسی:</strong> سرنخ گزینه‌ها را مقایسه می‌کند</li>
+                        <li><strong>مذاکره:</strong> در حال مذاکره قیمت و شرایط</li>
+                        <li><strong>بسته شدن:</strong> آماده خرید یا رد شده</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>مراحل بعد از خرید</h6>
+                    <p class="small mb-2">
+                        این مراحل برای پیگیری مشتریان بعد از خرید استفاده می‌شود:
+                    </p>
+                    <ul class="small">
+                        <li><strong>راه‌اندازی:</strong> محصول در حال نصب یا پیکربندی</li>
+                        <li><strong>استفاده فعال:</strong> مشتری از محصول استفاده می‌کند</li>
+                        <li><strong>پشتیبانی:</strong> نیاز به کمک یا آموزش دارد</li>
+                        <li><strong>تمدید:</strong> زمان تمدید قرارداد نزدیک است</li>
+                        <li><strong>ارتقا:</strong> فرصت فروش محصول بیشتر</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal افزودن Lead Stage -->
+<div class="modal fade" id="addLeadStageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addLeadStageForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">افزودن مرحله قیف فروش</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">عنوان <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">توضیحات</label>
+                        <textarea name="description" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">رنگ</label>
+                        <input type="color" name="color" class="form-control form-control-color" value="#667eea" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ترتیب نمایش</label>
+                        <input type="number" name="displayOrder" class="form-control" value="1" min="1" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                    <button type="submit" class="btn btn-primary">ذخیره</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal افزودن Post-Purchase Stage -->
+<div class="modal fade" id="addPostPurchaseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addPostPurchaseForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">افزودن مرحله بعد از خرید</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">عنوان <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">توضیحات</label>
+                        <textarea name="description" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">رنگ</label>
+                        <input type="color" name="color" class="form-control form-control-color" value="#28a745" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ترتیب نمایش</label>
+                        <input type="number" name="displayOrder" class="form-control" value="1" min="1" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                    <button type="submit" class="btn btn-success">ذخیره</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            loadLeadStages();
+            loadPostPurchaseStages();
+
+            // Load Lead Stages
+            function loadLeadStages() {
+                $.get('@Url.Action("GetLeadStages", "Stage")', function(data) {
+                    var html = '';
+                    if (data.length > 0) {
+                        data.forEach(function(item) {
+                            html += '<div class="list-group-item d-flex justify-content-between align-items-center">';
+                            html += '<div>';
+                            html += '<span class="badge me-2" style="background-color: ' + (item.color || '#6c757d') + '">&nbsp;</span>';
+                            html += '<strong>' + item.title + '</strong>';
+                            if (item.description) {
+                                html += '<br><small class="text-muted">' + item.description + '</small>';
+                            }
+                            html += '</div>';
+                            html += '<div class="btn-group btn-group-sm">';
+                            html += '<button class="btn btn-outline-danger" onclick="deleteLeadStage(' + item.id + ')">';
+                            html += '<i class="fa fa-trash"></i></button>';
+                            html += '</div></div>';
+                        });
+                    } else {
+                        html = '<div class="text-center text-muted py-3">هیچ مرحله‌ای تعریف نشده</div>';
+                    }
+                    $('#leadStagesList').html(html);
+                });
+            }
+
+            // Load Post-Purchase Stages
+            function loadPostPurchaseStages() {
+                $.get('@Url.Action("GetPostPurchaseStages", "Stage")', function(data) {
+                    var html = '';
+                    if (data.length > 0) {
+                        data.forEach(function(item) {
+                            html += '<div class="list-group-item d-flex justify-content-between align-items-center">';
+                            html += '<div>';
+                            html += '<span class="badge me-2" style="background-color: ' + (item.color || '#6c757d') + '">&nbsp;</span>';
+                            html += '<strong>' + item.title + '</strong>';
+                            if (item.description) {
+                                html += '<br><small class="text-muted">' + item.description + '</small>';
+                            }
+                            html += '</div>';
+                            html += '<div class="btn-group btn-group-sm">';
+                            html += '<button class="btn btn-outline-danger" onclick="deletePostPurchaseStage(' + item.id + ')">';
+                            html += '<i class="fa fa-trash"></i></button>';
+                            html += '</div></div>';
+                        });
+                    } else {
+                        html = '<div class="text-center text-muted py-3">هیچ مرحله‌ای تعریف نشده</div>';
+                    }
+                    $('#postPurchaseStagesList').html(html);
+                });
+            }
+
+            // Add Lead Stage
+            $('#addLeadStageForm').on('submit', function(e) {
+                e.preventDefault();
+                $.post('@Url.Action("CreateLeadStage", "Stage")', $(this).serialize(), function(response) {
+                    if (response.success) {
+                        $('#addLeadStageModal').modal('hide');
+                        loadLeadStages();
+                        showToast('success', 'مرحله با موفقیت اضافه شد');
+                    }
+                });
+            });
+
+            // Add Post-Purchase Stage
+            $('#addPostPurchaseForm').on('submit', function(e) {
+                e.preventDefault();
+                $.post('@Url.Action("CreatePostPurchaseStage", "Stage")', $(this).serialize(), function(response) {
+                    if (response.success) {
+                        $('#addPostPurchaseModal').modal('hide');
+                        loadPostPurchaseStages();
+                        showToast('success', 'مرحله با موفقیت اضافه شد');
+                    }
+                });
+            });
+
+            // Delete functions (defined globally)
+            window.deleteLeadStage = function(id) {
+                if (confirm('آیا از حذف این مرحله مطمئن هستید؟')) {
+                    $.post('@Url.Action("DeleteLeadStage", "Stage")', { id: id }, function(response) {
+                        if (response.success) {
+                            loadLeadStages();
+                            showToast('success', 'مرحله حذف شد');
+                        }
+                    });
+                }
+            };
+
+            window.deletePostPurchaseStage = function(id) {
+                if (confirm('آیا از حذف این مرحله مطمئن هستید؟')) {
+                    $.post('@Url.Action("DeletePostPurchaseStage", "Stage")', { id: id }, function(response) {
+                        if (response.success) {
+                            loadPostPurchaseStages();
+                            showToast('success', 'مرحله حذف شد');
+                        }
+                    });
+                }
+            };
+
+            function showToast(type, message) {
+                // Simple toast notification
+                var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+                var html = '<div class="alert ' + alertClass + ' alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 9999;" role="alert">';
+                html += message;
+                html += '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+                html += '</div>';
+                $('body').append(html);
+                setTimeout(function() {
+                    $('.alert').alert('close');
+                }, 3000);
+            }
+        });
+    </script>
+}

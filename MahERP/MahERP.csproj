@@ -55,7 +55,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Areas\CrmArea\Controllers\CRMControllers\" />
     <Folder Include="Areas\CrmArea\Controllers\DashboardControllers\" />
+    <Folder Include="Areas\CrmArea\Controllers\LeadControllers\" />
+    <Folder Include="Areas\CrmArea\Controllers\PipelineControllers\" />
     <Folder Include="MappingProfiles\" />
   </ItemGroup>
 

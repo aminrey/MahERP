@@ -1,0 +1,216 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.InteractionListViewModel
+@{
+    ViewData["Title"] = "لیست تعاملات";
+    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fa fa-handshake me-2"></i>
+                    لیست تعاملات
+                </h4>
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="fa fa-plus me-1"></i>
+                    ثبت تعامل جدید
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa fa-exclamation-circle me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- فیلترها -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="Index">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">جستجو</label>
+                        <input type="text" name="Filters.SearchTerm" value="@Model.Filters?.SearchTerm" class="form-control" placeholder="جستجو در موضوع یا توضیحات..." />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">نوع تعامل</label>
+                        <select name="Filters.InteractionTypeId" class="form-select">
+                            <option value="">همه</option>
+                            @* باید از Ajax پر شود *@
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">از تاریخ</label>
+                        <input type="text" name="Filters.FromDatePersian" value="@Model.Filters?.FromDatePersian" class="form-control date-picker" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">تا تاریخ</label>
+                        <input type="text" name="Filters.ToDatePersian" value="@Model.Filters?.ToDatePersian" class="form-control date-picker" />
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-secondary w-100">
+                            <i class="fa fa-filter me-1"></i>
+                            فیلتر
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- لیست تعاملات -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            @if (Model.Interactions.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px">#</th>
+                                <th>فرد/مشتری</th>
+                                <th>نوع تعامل</th>
+                                <th>موضوع</th>
+                                <th>تاریخ</th>
+                                <th>مرحله</th>
+                                <th>اهداف مرتبط</th>
+                                <th style="width: 120px">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Interactions)
+                            {
+                                <tr>
+                                    <td>@item.Id</td>
+                                    <td>
+                                        <div>
+                                            <strong>@item.ContactName</strong>
+                                            <br />
+                                            <small class="text-muted">@item.ContactTypeName</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge" style="background-color: @(item.InteractionTypeColor ?? "#6c757d")">
+                                            @item.InteractionTypeName
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div style="max-width: 250px">
+                                            <strong>@item.Subject</strong>
+                                            @if (!string.IsNullOrEmpty(item.Description))
+                                            {
+                                                <br />
+                                                <small class="text-muted">
+                                                    @(item.Description.Length > 50 ? item.Description.Substring(0, 50) + "..." : item.Description)
+                                                </small>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            @item.InteractionDatePersian
+                                            <br />
+                                            <small class="text-muted">@item.InteractionTime</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge" style="background-color: @(item.LeadStageColor ?? "#6c757d")">
+                                            @item.LeadStageName
+                                        </span>
+                                        @if (item.PostPurchaseStageName != null)
+                                        {
+                                            <br />
+                                            <span class="badge mt-1" style="background-color: @(item.PostPurchaseStageColor ?? "#6c757d")">
+                                                @item.PostPurchaseStageName
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.Goals != null && item.Goals.Any())
+                                        {
+                                            <div class="small">
+                                                @foreach (var goal in item.Goals)
+                                                {
+                                                    <span class="badge bg-info me-1">@goal.Title</span>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary" title="جزئیات">
+                                                <i class="fa fa-eye"></i>
+                                            </a>
+                                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline"
+                                                  onsubmit="return confirm('آیا از حذف این تعامل مطمئن هستید؟');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-outline-danger" title="حذف">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.TotalCount > Model.PageSize)
+                {
+                    <nav class="mt-3">
+                        <ul class="pagination justify-content-center">
+                            @for (int i = 1; i <= Math.Ceiling((double)Model.TotalCount / Model.PageSize); i++)
+                            {
+                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link" asp-action="Index" asp-route-page="@i">@i</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="fa fa-inbox fa-3x mb-3"></i>
+                    <p>هیچ تعاملی یافت نشد</p>
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="fa fa-plus me-1"></i>
+                        ثبت اولین تعامل
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // تاریخ شمسی
+        $(".date-picker").persianDatepicker({
+            format: 'YYYY/MM/DD',
+            autoClose: true
+        });
+    </script>
+}

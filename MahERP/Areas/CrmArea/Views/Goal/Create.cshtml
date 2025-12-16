@@ -1,0 +1,124 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.GoalCreateViewModel
+@{
+    ViewData["Title"] = "تعریف هدف جدید";
+    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">اهداف</a>
+                    </li>
+                    <li class="breadcrumb-item active">تعریف هدف جدید</li>
+                </ol>
+            </nav>
+            <h4 class="mb-0">
+                <i class="fa fa-plus-circle me-2"></i>
+                تعریف هدف فروش جدید
+                @if (ViewBag.TargetName != null)
+                {
+                    <span class="text-muted"> - @ViewBag.TargetName</span>
+                }
+            </h4>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <!-- عنوان -->
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label">عنوان هدف <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" placeholder="مثال: فروش محصول X" required />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <!-- توضیحات -->
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label">توضیحات</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="جزئیات بیشتر در مورد این هدف..."></textarea>
+                        </div>
+
+                        <!-- نام محصول -->
+                        <div class="mb-3">
+                            <label asp-for="ProductName" class="form-label">نام محصول/خدمت</label>
+                            <input asp-for="ProductName" class="form-control" placeholder="مثال: بسته نرم‌افزاری پیشرفته" />
+                            <small class="text-muted">محصول یا خدمتی که قرار است فروخته شود</small>
+                        </div>
+
+                        <!-- ارزش تخمینی -->
+                        <div class="mb-3">
+                            <label asp-for="EstimatedValue" class="form-label">ارزش تخمینی (ریال)</label>
+                            <input asp-for="EstimatedValue" type="number" class="form-control" placeholder="0" min="0" />
+                            <small class="text-muted">ارزش تخمینی این معامله</small>
+                        </div>
+
+                        <!-- Hidden Fields -->
+                        <input type="hidden" asp-for="ContactId" />
+                        <input type="hidden" asp-for="OrganizationId" />
+
+                        <hr class="my-4" />
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="ByContact" asp-route-contactId="@Model.ContactId" class="btn btn-outline-secondary">
+                                <i class="fa fa-arrow-right me-1"></i>
+                                بازگشت
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-1"></i>
+                                ذخیره هدف
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- راهنما -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fa fa-lightbulb me-2"></i>
+                        راهنما
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>هدف چیست؟</strong></p>
+                    <p class="small mb-3">
+                        هدف یک فرصت فروش بالقوه است که برای یک لید یا مشتری تعریف می‌شود. 
+                        هر تعامل می‌تواند به یک یا چند هدف مرتبط باشد و پیشرفت هر هدف در قیف فروش پیگیری می‌شود.
+                    </p>
+                    <p class="mb-2"><strong>نکات مهم:</strong></p>
+                    <ul class="small mb-0">
+                        <li>یک فرد می‌تواند چندین هدف داشته باشد</li>
+                        <li>هر هدف می‌تواند مرحله‌های مختلف قیف فروش را طی کند</li>
+                        <li>در زمان تبدیل به خرید، ارزش واقعی معامله ثبت می‌شود</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // فرمت عدد با کاما
+        $('input[type="number"]').on('input', function() {
+            var value = $(this).val();
+            if (value) {
+                $(this).next('.formatted-value').remove();
+                var formatted = parseInt(value).toLocaleString('fa-IR');
+                $(this).after('<small class="formatted-value text-muted d-block mt-1">' + formatted + ' ریال</small>');
+            } else {
+                $(this).next('.formatted-value').remove();
+            }
+        });
+    </script>
+}

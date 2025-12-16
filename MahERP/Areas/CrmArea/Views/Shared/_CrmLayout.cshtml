@@ -1,0 +1,93 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .crm-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0.5rem;
+        }
+
+        .crm-nav {
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .crm-nav .nav-link {
+            color: #495057;
+            border-radius: 0.25rem;
+            transition: all 0.3s;
+        }
+
+        .crm-nav .nav-link:hover {
+            background-color: #e9ecef;
+            color: #212529;
+        }
+
+        .crm-nav .nav-link.active {
+            background-color: #667eea;
+            color: white;
+        }
+
+        .stat-card {
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .badge {
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+    </style>
+    @RenderSection("Styles", required: false)
+}
+
+<div class="container-fluid">
+    <!-- نوار ناوبری CRM -->
+    <div class="crm-nav">
+        <nav class="nav nav-pills">
+            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "InteractionType" ? "active" : "")" 
+               asp-area="CrmArea" asp-controller="InteractionType" asp-action="Index">
+                <i class="fa fa-tags me-2"></i>
+                انواع تعامل
+            </a>
+            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Interaction" ? "active" : "")" 
+               asp-area="CrmArea" asp-controller="Interaction" asp-action="Index">
+                <i class="fa fa-handshake me-2"></i>
+                تعاملات
+            </a>
+            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Goal" ? "active" : "")" 
+               asp-area="CrmArea" asp-controller="Goal" asp-action="Index">
+                <i class="fa fa-bullseye me-2"></i>
+                اهداف فروش
+            </a>
+            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Referral" ? "active" : "")" 
+               asp-area="CrmArea" asp-controller="Referral" asp-action="Index">
+                <i class="fa fa-users me-2"></i>
+                ارجاعات
+            </a>
+            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stage" ? "active" : "")" 
+               asp-area="CrmArea" asp-controller="Stage" asp-action="Index">
+                <i class="fa fa-layer-group me-2"></i>
+                مراحل
+            </a>
+        </nav>
+    </div>
+
+    @RenderBody()
+</div>
+
+@section Scripts {
+    @RenderSection("Scripts", required: false)
+}

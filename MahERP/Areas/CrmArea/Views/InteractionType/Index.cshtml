@@ -1,0 +1,144 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.CrmViewModels.InteractionTypeViewModel>
+@{
+    ViewData["Title"] = "انواع تعامل";
+    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fa fa-list-alt me-2"></i>
+                    انواع تعامل
+                </h4>
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="fa fa-plus me-1"></i>
+                    نوع تعامل جدید
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa fa-exclamation-circle me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px">#</th>
+                                <th>عنوان</th>
+                                <th>وضعیت لید</th>
+                                <th>ترتیب</th>
+                                <th>وضعیت</th>
+                                <th style="width: 150px">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr class="@(!item.IsActive ? "table-secondary" : "")">
+                                    <td>@item.Id</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Icon))
+                                        {
+                                            <i class="fa @item.Icon me-2" style="color: @(item.ColorCode ?? "#6c757d")"></i>
+                                        }
+                                        @if (!string.IsNullOrEmpty(item.ColorCode))
+                                        {
+                                            <span class="badge" style="background-color: @item.ColorCode">@item.Title</span>
+                                        }
+                                        else
+                                        {
+                                            @item.Title
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge" style="background-color: @(item.LeadStageStatusColor ?? "#6c757d")">
+                                            @item.LeadStageStatusTitle
+                                        </span>
+                                    </td>
+                                    <td>@item.DisplayOrder</td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-primary" title="ویرایش">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
+                                            @if (item.IsActive)
+                                            {
+                                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline"
+                                                      onsubmit="return confirm('آیا از غیرفعال کردن این نوع تعامل مطمئن هستید؟');">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-outline-danger" title="غیرفعال کردن">
+                                                        <i class="fa fa-ban"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="fa fa-inbox fa-3x mb-3"></i>
+                    <p>هیچ نوع تعاملی تعریف نشده است</p>
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="fa fa-plus me-1"></i>
+                        اولین نوع تعامل را ایجاد کنید
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">
+                <i class="fa fa-info-circle me-2"></i>
+                راهنما
+            </h6>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li><strong>نوع تعامل:</strong> هر تعامل با مشتری یک نوع دارد (مثلاً: تماس تلفنی، جلسه حضوری، ایمیل)</li>
+                <li><strong>وضعیت لید:</strong> هر نوع تعامل مشخص می‌کند که لید در کدام مرحله از قیف فروش قرار دارد</li>
+                <li>مراحل قیف فروش: آگاهی → علاقه‌مندی → ارزیابی → تصمیم‌گیری → خرید</li>
+            </ul>
+        </div>
+    </div>
+</div>

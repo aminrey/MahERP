@@ -1,4 +1,5 @@
 ﻿using MahERP.DataModelLayer.Entities.Contacts;
+using MahERP.DataModelLayer.Enums;
 using MahERP.DataModelLayer.ViewModels.ContactViewModels;
 using System;
 using System.Collections.Generic;
@@ -26,6 +27,11 @@ namespace MahERP.DataModelLayer.Repository.ContactRepository
         Task<Contact> GetContactByIdAsync(int id, bool includePhones = false, bool includeDepartments = false, bool includeOrganizations = false);
 
         /// <summary>
+        /// دریافت Contact به صورت ساده (برای CRM)
+        /// </summary>
+        Task<Contact?> GetByIdAsync(int id);
+
+        /// <summary>
         /// جستجوی افراد
         /// </summary>
         List<Contact> SearchContacts(string searchTerm, byte? gender = null, bool includeInactive = false);
@@ -34,6 +40,11 @@ namespace MahERP.DataModelLayer.Repository.ContactRepository
         /// جستجوی Async افراد برای Select2
         /// </summary>
         Task<List<Contact>> SearchContactsAsync(string searchTerm, int maxResults = 20);
+
+        /// <summary>
+        /// جستجوی Async افراد با فیلتر ContactType (برای CRM)
+        /// </summary>
+        Task<List<Contact>> SearchAsync(string searchTerm, ContactType? contactType = null, int maxResults = 20);
 
         /// <summary>
         /// بررسی یکتا بودن کد ملی

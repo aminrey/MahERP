@@ -44,7 +44,7 @@ builder.Services.AddScoped<IStakeholderRepository, StakeholderRepository>();
 builder.Services.AddScoped<IBranchRepository, BranchRepository>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
-builder.Services.AddScoped<ICRMRepository, CRMRepository>();
+// builder.Services.AddScoped<ICRMRepository, CRMRepository>(); // ⭐ حذف شده - سیستم جدید CRM
 builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 builder.Services.AddScoped<IUserManagerRepository,UserManagerRepository>(); 
 builder.Services.AddScoped<IUserActivityLogRepository, UserActivityLogRepository>();
@@ -91,19 +91,13 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<TransactionManager>();
 builder.Services.AddSignalR();
 
-// ⭐⭐⭐ CRM Lead Management Services
-builder.Services.AddScoped<ICrmLeadStatusRepository, CrmLeadStatusRepository>();
-builder.Services.AddScoped<ICrmLeadRepository, CrmLeadRepository>();
-builder.Services.AddScoped<ICrmLeadInteractionRepository, CrmLeadInteractionRepository>();
-builder.Services.AddScoped<ICrmFollowUpRepository, CrmFollowUpRepository>();
-
-// ⭐⭐⭐ CRM Lead Source & Lost Reason Services - NEW
-builder.Services.AddScoped<CrmLeadSourceRepository>();
-builder.Services.AddScoped<CrmLostReasonRepository>();
-
-// ⭐⭐⭐ CRM Pipeline & Opportunity Services
-builder.Services.AddScoped<ICrmPipelineStageRepository, CrmPipelineStageRepository>();
-builder.Services.AddScoped<ICrmOpportunityRepository, CrmOpportunityRepository>();
+// ⭐⭐⭐ NEW CRM System Services
+builder.Services.AddScoped<ILeadStageStatusRepository, LeadStageStatusRepository>();
+builder.Services.AddScoped<IPostPurchaseStageRepository, PostPurchaseStageRepository>();
+builder.Services.AddScoped<IInteractionTypeRepository, InteractionTypeRepository>();
+builder.Services.AddScoped<IGoalRepository, GoalRepository>();
+builder.Services.AddScoped<IInteractionRepository, InteractionRepository>();
+builder.Services.AddScoped<IReferralRepository, ReferralRepository>();
 
 // ⭐⭐⭐ Core Integration Service (هسته مرکزی یکپارچگی ماژول‌ها)
 builder.Services.AddScoped<ICoreIntegrationService, CoreIntegrationService>();

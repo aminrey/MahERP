@@ -1,0 +1,184 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.CrmViewModels.ReferralViewModel>
+@{
+    ViewData["Title"] = "ارجاعات " + ViewBag.ContactName;
+    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+    var isReferrer = ViewBag.IsReferrer ?? false;
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-controller="Contact" asp-action="Index" asp-area="ContactArea">افراد</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        @if (isReferrer)
+                        {
+                            <text>افراد معرفی شده توسط @ViewBag.ContactName</text>
+                        }
+                        else
+                        {
+                            <text>معرف @ViewBag.ContactName</text>
+                        }
+                    </li>
+                </ol>
+            </nav>
+            <h4 class="mb-0">
+                <i class="fa fa-users me-2"></i>
+                @if (isReferrer)
+                {
+                    <text>افراد معرفی شده توسط @ViewBag.ContactName</text>
+                }
+                else
+                {
+                    <text>معرف @ViewBag.ContactName</text>
+                }
+            </h4>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px">#</th>
+                                @if (isReferrer)
+                                {
+                                    <th>فرد معرفی شده</th>
+                                    <th>نوع</th>
+                                }
+                                else
+                                {
+                                    <th>معرف</th>
+                                }
+                                <th>تاریخ ارجاع</th>
+                                <th>وضعیت</th>
+                                <th>یادداشت</th>
+                                <th style="width: 120px">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@item.Id</td>
+                                    @if (isReferrer)
+                                    {
+                                        <td>
+                                            <strong>@item.ReferredContactName</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                @(item.ReferredContactType == MahERP.DataModelLayer.Enums.ContactType.Lead ? "سرنخ" : 
+                                                  item.ReferredContactType == MahERP.DataModelLayer.Enums.ContactType.Customer ? "مشتری" : "سایر")
+                                            </span>
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                        <td>
+                                            <strong>@item.ReferrerContactName</strong>
+                                        </td>
+                                    }
+                                    <td>@item.ReferralDatePersian</td>
+                                    <td>
+                                        <span class="badge" style="background-color: @item.StatusColor">
+                                            @item.StatusName
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Notes))
+                                        {
+                                            <small class="text-muted">
+                                                @(item.Notes.Length > 30 ? item.Notes.Substring(0, 30) + "..." : item.Notes)
+                                            </small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary" title="جزئیات">
+                                                <i class="fa fa-eye"></i>
+                                            </a>
+                                            @if (item.Status == MahERP.DataModelLayer.Enums.ReferralStatus.Pending)
+                                            {
+                                                <form asp-action="MarkAsSuccessful" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-outline-success" title="موفق">
+                                                        <i class="fa fa-check"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-action="MarkAsFailed" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-outline-danger" title="ناموفق">
+                                                        <i class="fa fa-times"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="fa fa-users fa-3x mb-3"></i>
+                @if (isReferrer)
+                {
+                    <p>این مشتری هنوز کسی را معرفی نکرده است</p>
+                }
+                else
+                {
+                    <p>این فرد توسط کسی معرفی نشده است</p>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- راهنما -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">
+                <i class="fa fa-info-circle me-2"></i>
+                درباره ارجاعات
+            </h6>
+        </div>
+        <div class="card-body">
+            <p class="mb-2"><strong>ارجاع چیست؟</strong></p>
+            <p class="small mb-3">
+                ارجاع یعنی یک مشتری، شخص یا سازمان دیگری را به شما معرفی می‌کند. 
+                پیگیری ارجاعات به شما کمک می‌کند تا بهترین مشتریان خود را شناسایی و جایزه دهید.
+            </p>
+            <ul class="small mb-0">
+                <li><strong>در انتظار:</strong> ارجاع ثبت شده اما هنوز پیگیری نشده</li>
+                <li><strong>موفق:</strong> فرد معرفی شده به مشتری تبدیل شده</li>
+                <li><strong>ناموفق:</strong> فرد معرفی شده به مشتری تبدیل نشده</li>
+            </ul>
+        </div>
+    </div>
+</div>

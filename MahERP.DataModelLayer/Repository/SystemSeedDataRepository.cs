@@ -273,59 +273,13 @@ namespace MahERP.DataModelLayer.Repository
         }
 
         /// <summary>
-        /// ⭐⭐⭐ اطمینان از وجود وضعیت‌های سرنخ CRM
+        /// ⭐⭐⭐ اطمینان از وجود وضعیت‌های پیش‌فرض سرنخ CRM
         /// </summary>
         public async Task EnsureCrmLeadStatusSeedDataAsync()
         {
-            try
-            {
-                // پیدا کردن اولین کاربر برای CreatorUserId
-                var systemUser = await _context.Users.FirstOrDefaultAsync();
-                
-                if (systemUser == null)
-                {
-                    _logger.LogWarning("⚠️ No users found in database, skipping CRM Lead Status seed");
-                    return;
-                }
-
-                foreach (var status in StaticCrmLeadStatusSeedData.DefaultStatuses)
-                {
-                    // بررسی بر اساس Title (نه Id چون IDENTITY است)
-                    var exists = await _context.CrmLeadStatus_Tbl
-                        .AnyAsync(s => s.Title == status.Title);
-
-                    if (!exists)
-                    {
-                        // ایجاد وضعیت جدید
-                        var newStatus = new CrmLeadStatus
-                        {
-                            Title = status.Title,
-                            TitleEnglish = status.TitleEnglish,
-                            ColorCode = status.ColorCode,
-                            Icon = status.Icon,
-                            DisplayOrder = status.DisplayOrder,
-                            IsDefault = status.IsDefault,
-                            IsFinal = status.IsFinal,
-                            IsPositive = status.IsPositive,
-                            Description = status.Description,
-                            IsActive = true,
-                            CreatedDate = DateTime.Now,
-                            CreatorUserId = systemUser.Id
-                        };
-
-                        _context.CrmLeadStatus_Tbl.Add(newStatus);
-                        _logger.LogInformation($"➕ Added CrmLeadStatus: {status.Title} ({status.TitleEnglish})");
-                    }
-                }
-
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("✅ CRM Lead Status Seed Data successfully ensured.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error ensuring CRM Lead Status seed data");
-                throw;
-            }
+            // TODO: این متد نیاز به بازنویسی دارد - سیستم قدیمی CrmLeadStatus با LeadStageStatus جایگزین شده
+            // داده‌های جدید در CrmSeedData.cs تعریف شده و در Migration اضافه می‌شوند
+            _logger.LogInformation("✅ CRM Seed Data is handled via Migration (LeadStageStatus, PostPurchaseStage)");
         }
 
         /// <summary>
@@ -333,7 +287,8 @@ namespace MahERP.DataModelLayer.Repository
         /// </summary>
         public async Task<bool> CheckIfCrmLeadStatusExistsAsync(int statusId)
         {
-            return await _context.CrmLeadStatus_Tbl
+            // TODO: تغییر به LeadStageStatus
+            return await _context.LeadStageStatus_Tbl
                 .AnyAsync(s => s.Id == statusId);
         }
     }
