@@ -1,142 +1,223 @@
 ﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.InteractionCreateViewModel
+@using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl
 @{
     ViewData["Title"] = "ثبت تعامل جدید";
-    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+    var contactName = ViewBag.ContactName as string;
+    var organizationName = ViewBag.OrganizationName as string;
+    var contactType = ViewBag.ContactType;
 }
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <nav aria-label="breadcrumb">
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-handshake text-primary me-2"></i>
+                ثبت تعامل جدید
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
                 <ol class="breadcrumb">
+                    <li class="breadcrumb-item">CRM</li>
                     <li class="breadcrumb-item">
                         <a asp-action="Index">تعاملات</a>
                     </li>
-                    <li class="breadcrumb-item active">ثبت تعامل جدید</li>
+                    <li class="breadcrumb-item active">ثبت جدید</li>
                 </ol>
             </nav>
-            <h4 class="mb-0">
-                <i class="fa fa-plus-circle me-2"></i>
-                ثبت تعامل جدید
-                @if (ViewBag.ContactName != null)
-                {
-                    <span class="text-muted"> - @ViewBag.ContactName</span>
-                }
-            </h4>
         </div>
     </div>
+</div>
+<!-- END Hero -->
 
-    <form asp-action="Create" method="post">
+<!-- Page Content -->
+<div class="content content-full">
+    <!-- ⭐⭐⭐ DEBUG INFO (Remove in production) -->
+    <div class="alert alert-info" style="display: none;" id="debugInfo">
+        <strong>🔍 Debug Info:</strong><br>
+        Model.BranchId: @(Model.BranchId?.ToString() ?? "null")<br>
+        ViewBag.DefaultBranchId: @(ViewBag.DefaultBranchId?.ToString() ?? "null")<br>
+        Model.ContactId: @Model.ContactId<br>
+        Model.OrganizationId: @(Model.OrganizationId?.ToString() ?? "null")<br>
+        Hidden Input Value: <span id="hiddenBranchValue"></span>
+    </div>
+    
+    <form asp-action="Create" method="post" id="interactionForm">
         @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="BranchId" id="selectedBranchId" value="@(Model.BranchId ?? ViewBag.DefaultBranchId ?? 0)" />
+        <input type="hidden" asp-for="OrganizationId" id="selectedOrganizationId" value="@(Model.OrganizationId ?? 0)" />
+        <input type="hidden" asp-for="ContactId" id="selectedContactId" value="@Model.ContactId" />
 
         <div class="row">
-            <!-- اطلاعات اصلی -->
+            <!-- ستون اصلی -->
             <div class="col-lg-8">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0">
-                            <i class="fa fa-info-circle me-2"></i>
-                            اطلاعات تعامل
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <!-- Contact -->
-                        <div class="mb-3">
-                            <label asp-for="ContactId" class="form-label">فرد/مشتری <span class="text-danger">*</span></label>
-                            <select asp-for="ContactId" class="form-select" id="contactSelect" required>
-                                <option value="">-- انتخاب کنید --</option>
-                            </select>
-                            <span asp-validation-for="ContactId" class="text-danger"></span>
-                            <small class="text-muted">شروع به تایپ کنید تا جستجو انجام شود</small>
+                <!-- اطلاعات مخاطب انتخاب شده -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-user-check me-1"></i>
+                            مخاطب انتخاب شده
+                        </h3>
+                        <div class="block-options">
+                            <button type="button" 
+                                    class="btn btn-sm btn-success me-1" 
+                                    onclick="openQuickAddModalForInteraction()">
+                                <i class="fa fa-plus me-1"></i>
+                                افزودن سریع
+                            </button>
+                            <a asp-action="Create" class="btn btn-sm btn-alt-secondary">
+                                <i class="fa fa-exchange-alt me-1"></i>
+                                تغییر مخاطب
+                            </a>
                         </div>
+                    </div>
+                    <div class="block-content block-content-full bg-body-light">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <i class="fa fa-user-circle fa-3x text-primary"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h4 class="mb-1">@contactName</h4>
+                                @if (!string.IsNullOrEmpty(organizationName))
+                                {
+                                    <p class="text-muted mb-0">
+                                        <i class="fa fa-building me-1"></i>
+                                        @organizationName
+                                    </p>
+                                }
+                                @if (contactType != null)
+                                {
+                                    var typeName = contactType switch
+                                    {
+                                        MahERP.DataModelLayer.Enums.ContactType.Lead => "سرنخ",
+                                        MahERP.DataModelLayer.Enums.ContactType.Customer => "مشتری",
+                                        _ => "سایر"
+                                    };
+                                    var typeColor = contactType switch
+                                    {
+                                        MahERP.DataModelLayer.Enums.ContactType.Lead => "warning",
+                                        MahERP.DataModelLayer.Enums.ContactType.Customer => "success",
+                                        _ => "secondary"
+                                    };
+                                    <span class="badge bg-@typeColor">@typeName</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- اطلاعات تعامل -->
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-info-circle me-1"></i>
+                            اطلاعات تعامل
+                        </h3>
+                    </div>
+                    <div class="block-content">
                         <!-- نوع تعامل -->
-                        <div class="mb-3">
-                            <label asp-for="InteractionTypeId" class="form-label">نوع تعامل <span class="text-danger">*</span></label>
+                        <div class="mb-4">
+                            <label class="form-label" for="InteractionTypeId">
+                                نوع تعامل <span class="text-danger">*</span>
+                            </label>
                             <select asp-for="InteractionTypeId" class="form-select" id="interactionTypeSelect" required>
                                 <option value="">-- انتخاب کنید --</option>
                                 @foreach (var type in Model.InteractionTypes)
                                 {
-                                    <option value="@type.Id" data-stage="@type.LeadStageStatusTitle">
+                                    <option value="@type.Id" data-stage="@type.LeadStageStatusTitle" data-stage-color="@type.LeadStageStatusColor">
                                         @type.Title
                                     </option>
                                 }
                             </select>
                             <span asp-validation-for="InteractionTypeId" class="text-danger"></span>
                             <div id="leadStageInfo" class="mt-2" style="display: none;">
-                                <small class="text-muted">مرحله لید: <span id="leadStageText" class="badge"></span></small>
+                                <small class="text-muted">
+                                    <i class="fa fa-funnel-dollar me-1"></i>
+                                    مرحله قیف: <span id="leadStageText" class="badge"></span>
+                                </small>
                             </div>
                         </div>
 
                         <!-- موضوع -->
-                        <div class="mb-3">
-                            <label asp-for="Subject" class="form-label">موضوع تعامل <span class="text-danger">*</span></label>
+                        <div class="mb-4">
+                            <label class="form-label" for="Subject">
+                                موضوع تعامل <span class="text-danger">*</span>
+                            </label>
                             <input asp-for="Subject" class="form-control" placeholder="مثال: تماس تلفنی برای پیگیری" required />
                             <span asp-validation-for="Subject" class="text-danger"></span>
                         </div>
 
                         <!-- توضیحات -->
-                        <div class="mb-3">
-                            <label asp-for="Description" class="form-label">توضیحات</label>
-                            <textarea asp-for="Description" class="form-control" rows="4" placeholder="جزئیات تعامل..."></textarea>
+                        <div class="mb-4">
+                            <label class="form-label" for="Description">
+                                شرح تعامل <span class="text-danger">*</span>
+                            </label>
+                            <textarea asp-for="Description" class="form-control" rows="4" placeholder="جزئیات کامل تعامل..." required></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
                         </div>
 
                         <!-- تاریخ و زمان -->
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="InteractionDatePersian" class="form-label">تاریخ تعامل <span class="text-danger">*</span></label>
-                                    <input asp-for="InteractionDatePersian" class="form-control date-picker" required />
+                            <div class="col-md-4">
+                                <div class="mb-4">
+                                    <label class="form-label" for="InteractionDatePersian">
+                                        تاریخ تعامل <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="InteractionDatePersian" class="form-control js-flatpickr" required readonly />
                                     <span asp-validation-for="InteractionDatePersian" class="text-danger"></span>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label asp-for="InteractionTime" class="form-label">ساعت</label>
+                            <div class="col-md-4">
+                                <div class="mb-4">
+                                    <label class="form-label" for="InteractionTime">ساعت تعامل</label>
                                     <input asp-for="InteractionTime" type="time" class="form-control" />
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label asp-for="DurationMinutes" class="form-label">مدت (دقیقه)</label>
-                                    <input asp-for="DurationMinutes" type="number" class="form-control" min="0" />
+                            <div class="col-md-4">
+                                <div class="mb-4">
+                                    <label class="form-label" for="DurationMinutes">مدت (دقیقه)</label>
+                                    <input asp-for="DurationMinutes" type="number" class="form-control" min="0" placeholder="مثال: 30" />
                                 </div>
                             </div>
                         </div>
 
                         <!-- نتیجه -->
-                        <div class="mb-3">
-                            <label asp-for="Result" class="form-label">نتیجه تعامل</label>
+                        <div class="mb-4">
+                            <label class="form-label" for="Result">نتیجه تعامل</label>
                             <textarea asp-for="Result" class="form-control" rows="2" placeholder="نتیجه و دستاوردهای این تعامل..."></textarea>
                         </div>
 
                         <!-- اقدام بعدی -->
-                        <div class="mb-3">
-                            <label asp-for="NextAction" class="form-label">اقدام بعدی</label>
-                            <input asp-for="NextAction" class="form-control" placeholder="مثال: ارسال پیشنهاد قیمت" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="NextActionDatePersian" class="form-label">تاریخ اقدام بعدی</label>
-                            <input asp-for="NextActionDatePersian" class="form-control date-picker" />
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-4">
+                                    <label class="form-label" for="NextAction">اقدام بعدی</label>
+                                    <input asp-for="NextAction" class="form-control" placeholder="مثال: ارسال پیشنهاد قیمت" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-4">
+                                    <label class="form-label" for="NextActionDatePersian">تاریخ اقدام بعدی</label>
+                                    <input asp-for="NextActionDatePersian" class="form-control js-flatpickr" readonly />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- اطلاعات جانبی -->
+            <!-- ستون کناری -->
             <div class="col-lg-4">
-                <!-- بعد از خرید -->
-                <div class="card shadow-sm mb-4" id="postPurchaseCard" style="display: none;">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0">
-                            <i class="fa fa-shopping-cart me-2"></i>
-                            مرحله بعد از خرید
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label asp-for="PostPurchaseStageId" class="form-label">مرحله</label>
+                <!-- مرحله بعد از خرید (فقط برای مشتریان) -->
+                @if (contactType != null && (MahERP.DataModelLayer.Enums.ContactType)contactType == MahERP.DataModelLayer.Enums.ContactType.Customer)
+                {
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default bg-success">
+                            <h3 class="block-title text-white">
+                                <i class="fa fa-shopping-cart me-1"></i>
+                                مرحله بعد از خرید
+                            </h3>
+                        </div>
+                        <div class="block-content">
                             <select asp-for="PostPurchaseStageId" class="form-select">
                                 <option value="">-- انتخاب کنید --</option>
                                 @foreach (var stage in Model.PostPurchaseStages)
@@ -144,78 +225,212 @@
                                     <option value="@stage.Id">@stage.Title</option>
                                 }
                             </select>
-                            <small class="text-muted">فقط برای مشتریان</small>
+                            <small class="form-text text-muted mt-2">
+                                <i class="fa fa-info-circle me-1"></i>
+                                مرحله فعلی مشتری در چرخه پس از خرید
+                            </small>
                         </div>
                     </div>
-                </div>
+                }
 
                 <!-- اهداف مرتبط -->
-                <div class="card shadow-sm mb-4" id="goalsCard" style="display: none;">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0">
-                            <i class="fa fa-bullseye me-2"></i>
-                            اهداف مرتبط
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div id="goalsList">
-                            <p class="text-muted small">ابتدا فرد را انتخاب کنید</p>
+                @if (Model.AvailableGoals.Any())
+                {
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-bullseye me-1"></i>
+                                اهداف مرتبط <span class="text-danger">*</span>
+                            </h3>
+                            <div class="block-options">
+                                <span class="badge bg-primary">@Model.AvailableGoals.Count هدف</span>
+                            </div>
+                        </div>
+                        <div class="block-content p-0">
+                            <!-- جدول اهداف -->
+                            <div class="table-responsive">
+                                <table class="table table-hover table-vcenter mb-0">
+                                    <thead class="bg-body-light">
+                                        <tr>
+                                            <th style="width: 50px;" class="text-center">
+                                                <input type="checkbox" id="selectAllGoals" class="form-check-input" />
+                                            </th>
+                                            <th>عنوان هدف</th>
+                                            <th style="width: 150px;">محصول/خدمت</th>
+                                            <th style="width: 120px;" class="text-center">مرحله فعلی</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="goalsListContainer">
+                                        @foreach (var goal in Model.AvailableGoals)
+                                        {
+                                            <tr class="goal-row">
+                                                <td class="text-center">
+                                                    <input class="form-check-input goal-checkbox" 
+                                                           type="checkbox" 
+                                                           name="GoalIds" 
+                                                           value="@goal.Id" 
+                                                           id="goal_@goal.Id" />
+                                                </td>
+                                                <td>
+                                                    <label class="fw-semibold mb-0 d-block" for="goal_@goal.Id" style="cursor: pointer;">
+                                                        <i class="fa fa-bullseye fa-fw text-primary me-1"></i>
+                                                        @goal.Title
+                                                    </label>
+                                                </td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(goal.ProductName))
+                                                    {
+                                                        <small class="text-muted">
+                                                            <i class="fa fa-box fa-fw me-1"></i>
+                                                            @goal.ProductName
+                                                        </small>
+                                                    }
+                                                    else
+                                                    {
+                                                        <small class="text-muted">-</small>
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    @if (!string.IsNullOrEmpty(goal.CurrentLeadStageStatusTitle))
+                                                    {
+                                                        <span class="badge" style="background-color: @(goal.CurrentLeadStageStatusColor ?? "#6c757d")">
+                                                            @goal.CurrentLeadStageStatusTitle
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary">نامشخص</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Footer -->
+                            <div class="block-content block-content-full bg-body-light border-top">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <small class="text-muted">
+                                            <i class="fa fa-info-circle me-1"></i>
+                                            حداقل انتخاب یک هدف الزامی است
+                                        </small>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="button" class="btn btn-sm btn-alt-primary" onclick="openQuickGoalModal()">
+                                            <i class="fa fa-plus me-1"></i>
+                                            هدف جدید
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                }
+                else
+                {
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default bg-warning-light">
+                            <h3 class="block-title text-warning">
+                                <i class="fa fa-exclamation-triangle me-1"></i>
+                                اهداف مرتبط <span class="text-danger">*</span>
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="alert alert-warning d-flex align-items-center mb-3">
+                                <i class="fa fa-exclamation-triangle fa-2x me-3"></i>
+                                <div>
+                                    <strong>هیچ هدفی تعریف نشده است!</strong>
+                                    <p class="mb-0 small">برای ثبت تعامل، ابتدا باید یک هدف تعریف کنید.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Container برای اهداف جدید -->
+                            <div id="goalsListContainer" style="display: none;">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-vcenter mb-0">
+                                        <thead class="bg-body-light">
+                                            <tr>
+                                                <th style="width: 50px;" class="text-center">
+                                                    <input type="checkbox" id="selectAllGoals" class="form-check-input" />
+                                                </th>
+                                                <th>عنوان هدف</th>
+                                                <th style="width: 150px;">محصول/خدمت</th>
+                                                <th style="width: 120px;" class="text-center">مرحله فعلی</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="goalsTableBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center py-3">
+                                <button type="button" class="btn btn-primary btn-lg" onclick="openQuickGoalModal()">
+                                    <i class="fa fa-plus-circle me-2"></i>
+                                    تعریف هدف اول
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
 
                 <!-- ارجاع -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0">
-                            <i class="fa fa-users me-2"></i>
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-users me-1"></i>
                             ارجاع/توصیه
-                        </h6>
+                        </h3>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <div class="form-check">
+                    <div class="block-content">
+                        @if (contactType != null && (MahERP.DataModelLayer.Enums.ContactType)contactType == MahERP.DataModelLayer.Enums.ContactType.Customer)
+                        {
+                            <!-- برای مشتری: معرفی کسی -->
+                            <div class="form-check mb-3">
                                 <input asp-for="HasReferral" class="form-check-input" type="checkbox" id="hasReferralCheck" />
                                 <label asp-for="HasReferral" class="form-check-label">
                                     این مشتری کسی را معرفی کرده
                                 </label>
                             </div>
-                        </div>
-                        <div id="referralSection" style="display: none;">
-                            <label class="form-label">فرد معرفی شده</label>
-                            <select asp-for="ReferredContactId" class="form-select" id="referredContactSelect">
-                                <option value="">-- انتخاب کنید --</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3 mt-3">
-                            <div class="form-check">
+                            <div id="referralSection" style="display: none;">
+                                <label class="form-label">فرد معرفی شده</label>
+                                <select asp-for="ReferredContactId" class="form-select js-select2-referral" id="referredContactSelect">
+                                    <option value="">-- جستجو و انتخاب --</option>
+                                </select>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- برای لید: معرفی شده توسط -->
+                            <div class="form-check mb-3">
                                 <input asp-for="IsReferred" class="form-check-input" type="checkbox" id="isReferredCheck" />
                                 <label asp-for="IsReferred" class="form-check-label">
                                     این لید توسط کسی معرفی شده
                                 </label>
                             </div>
-                        </div>
-                        <div id="referrerSection" style="display: none;">
-                            <label class="form-label">معرف</label>
-                            <select asp-for="ReferrerContactId" class="form-select" id="referrerContactSelect">
-                                <option value="">-- انتخاب کنید --</option>
-                            </select>
-                        </div>
+                            <div id="referrerSection" style="display: none;">
+                                <label class="form-label">معرف (مشتری)</label>
+                                <select asp-for="ReferrerContactId" class="form-select js-select2-referral" id="referrerContactSelect">
+                                    <option value="">-- جستجو و انتخاب --</option>
+                                </select>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card shadow-sm">
-            <div class="card-body">
+        <!-- دکمه‌های عملیات -->
+        <div class="block block-rounded">
+            <div class="block-content block-content-full bg-body-light">
                 <div class="d-flex justify-content-between">
-                    <a asp-action="Index" class="btn btn-outline-secondary">
+                    <a asp-action="Index" class="btn btn-alt-secondary">
                         <i class="fa fa-arrow-right me-1"></i>
-                        بازگشت
+                        انصراف
                     </a>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fa fa-save me-1"></i>
+                        <i class="fa fa-check me-1"></i>
                         ثبت تعامل
                     </button>
                 </div>
@@ -223,115 +438,222 @@
         </div>
     </form>
 </div>
+<!-- END Page Content -->
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+
+    <!-- ⭐ QuickAdd Helper Script -->
+    <script src="~/assets/js/crm/quickaddhelper.js"></script>
+
     <script>
         $(document).ready(function() {
-            // تاریخ شمسی
-            $(".date-picker").persianDatepicker({
-                format: 'YYYY/MM/DD',
-                autoClose: true
-            });
-
-            // Contact Select2
-            $("#contactSelect").select2({
-                placeholder: "جستجوی فرد یا مشتری...",
-                ajax: {
-                    url: '@Url.Action("SearchContacts", "CrmAjax")',
-                    dataType: 'json',
-                    delay: 250,
-                    data: function (params) {
-                        return { term: params.term };
-                    },
-                    processResults: function (data) {
-                        return { results: data.results };
-                    }
+            // ⭐⭐⭐ DEBUG: نمایش debug info
+            var branchIdValue = $('#selectedBranchId').val();
+            $('#hiddenBranchValue').text(branchIdValue || 'empty');
+            
+            console.log('🔍 Page loaded - Debug Info:');
+            console.log('  - Hidden input #selectedBranchId:', branchIdValue);
+            console.log('  - Model.BranchId:', '@(Model.BranchId?.ToString() ?? "null")');
+            console.log('  - ViewBag.DefaultBranchId:', '@(ViewBag.DefaultBranchId?.ToString() ?? "null")');
+            
+            // نمایش debug panel (فقط برای development)
+            if (window.location.hostname === 'localhost') {
+                $('#debugInfo').show();
+            }
+            
+            // Persian Datepicker
+            Dashmix.helpersOnLoad(['js-flatpickr']);
+            
+            // ⭐ هایلایت کردن سطر انتخاب شده
+            $(document).on('change', '.goal-checkbox', function() {
+                if ($(this).is(':checked')) {
+                    $(this).closest('tr').addClass('selected');
+                } else {
+                    $(this).closest('tr').removeClass('selected');
                 }
+                
+                // بروزرسانی checkbox "انتخاب همه"
+                var totalGoals = $('.goal-checkbox').length;
+                var selectedGoals = $('.goal-checkbox:checked').length;
+                $('#selectAllGoals').prop('checked', totalGoals === selectedGoals);
             });
-
-            // وقتی Contact انتخاب شد
-            $("#contactSelect").on('change', function() {
-                var contactId = $(this).val();
-                if (contactId) {
-                    // دریافت اهداف
-                    $.get('@Url.Action("GetGoalsByContact", "CrmAjax")', { contactId: contactId }, function(goals) {
-                        var html = '';
-                        if (goals.length > 0) {
-                            goals.forEach(function(goal) {
-                                html += '<div class="form-check mb-2">';
-                                html += '<input class="form-check-input" type="checkbox" name="GoalIds" value="' + goal.id + '" id="goal' + goal.id + '">';
-                                html += '<label class="form-check-label" for="goal' + goal.id + '">' + goal.title;
-                                if (goal.productName) html += ' <small class="text-muted">(' + goal.productName + ')</small>';
-                                html += '</label></div>';
-                            });
-                            $("#goalsCard").show();
-                        } else {
-                            html = '<p class="text-muted small">هیچ هدفی برای این فرد تعریف نشده</p>';
-                            $("#goalsCard").show();
-                        }
-                        $("#goalsList").html(html);
-                    });
-
-                    // بررسی نوع Contact
-                    $.get('@Url.Action("GetContactType", "CrmAjax")', { contactId: contactId }, function(data) {
-                        if (data.isCustomer) {
-                            $("#postPurchaseCard").show();
-                        } else {
-                            $("#postPurchaseCard").hide();
-                        }
-                    });
-                }
+            
+            // ⭐ انتخاب/عدم انتخاب همه اهداف
+            $('#selectAllGoals').on('change', function() {
+                var isChecked = $(this).is(':checked');
+                $('.goal-checkbox').prop('checked', isChecked).trigger('change');
             });
-
+            
+            // کلیک روی سطر برای انتخاب
+            $(document).on('click', '.goal-row td:not(:first-child)', function() {
+                var $checkbox = $(this).closest('tr').find('.goal-checkbox');
+                $checkbox.prop('checked', !$checkbox.is(':checked')).trigger('change');
+            });
+            
             // نمایش مرحله لید
-            $("#interactionTypeSelect").on('change', function() {
+            $('#interactionTypeSelect').on('change', function() {
                 var selectedOption = $(this).find('option:selected');
                 var stage = selectedOption.data('stage');
+                var stageColor = selectedOption.data('stage-color');
+                
                 if (stage) {
-                    $("#leadStageText").text(stage);
-                    $("#leadStageInfo").show();
+                    $('#leadStageText').text(stage).css('background-color', stageColor || '#6c757d');
+                    $('#leadStageInfo').show();
                 } else {
-                    $("#leadStageInfo").hide();
+                    $('#leadStageInfo').hide();
                 }
             });
-
-            // ارجاع
-            $("#hasReferralCheck").on('change', function() {
+            
+            // ارجاع - مشتری معرفی کرده
+            $('#hasReferralCheck').on('change', function() {
                 if ($(this).is(':checked')) {
-                    $("#referralSection").show();
-                    $("#isReferredCheck").prop('checked', false);
-                    $("#referrerSection").hide();
+                    $('#referralSection').slideDown();
                 } else {
-                    $("#referralSection").hide();
+                    $('#referralSection').slideUp();
+                    $('#referredContactSelect').val('').trigger('change');
                 }
             });
-
-            $("#isReferredCheck").on('change', function() {
+            
+            // ارجاع - لید معرفی شده
+            $('#isReferredCheck').on('change', function() {
                 if ($(this).is(':checked')) {
-                    $("#referrerSection").show();
-                    $("#hasReferralCheck").prop('checked', false);
-                    $("#referralSection").hide();
+                    $('#referrerSection').slideDown();
                 } else {
-                    $("#referrerSection").hide();
+                    $('#referrerSection').slideUp();
+                    $('#referrerContactSelect').val('').trigger('change');
                 }
             });
-
-            // Select2 برای ارجاعات
-            $("#referredContactSelect, #referrerContactSelect").select2({
-                placeholder: "جستجوی فرد...",
+            
+            // Select2 برای جستجوی ارجاع
+            $('.js-select2-referral').select2({
+                width: '100%',
+                placeholder: 'جستجو...',
+                allowClear: true,
                 ajax: {
-                    url: '@Url.Action("SearchContacts", "CrmAjax")',
+                    url: '@Url.Action("SearchContacts", "CrmAjax", new { area = "CrmArea" })',
                     dataType: 'json',
-                    delay: 250,
-                    data: function (params) {
+                    delay: 300,
+                    data: function(params) {
                         return { term: params.term };
                     },
-                    processResults: function (data) {
+                    processResults: function(data) {
                         return { results: data.results };
                     }
                 }
             });
+            
+            // ⭐ مقداردهی اولیه - علامت‌گذاری سطرهای انتخاب شده
+            $('.goal-checkbox:checked').each(function() {
+                $(this).closest('tr').addClass('selected');
+            });
         });
+
+        // تابع باز کردن مودال هدف جدید
+        function openQuickGoalModal() {
+            var contactId = $('#selectedContactId').val() || @Model.ContactId;
+            var organizationId = $('#selectedOrganizationId').val() || @(Model.OrganizationId ?? 0);
+            var currentUrl = window.location.href;
+            
+            createAndShowModal({
+                url: '@Url.Action("CreateQuickModal", "Goal", new { area = "CrmArea" })' + 
+                     '?contactId=' + contactId + 
+                     '&organizationId=' + organizationId +
+                     '&returnUrl=' + encodeURIComponent(currentUrl),
+                onHidden: function() {
+                    // Modal بسته شد
+                }
+            });
+        }
+
+        // ⭐ تابع باز کردن QuickAdd برای افزودن Contact/Organization
+        function openQuickAddModalForInteraction() {
+            // ⭐⭐⭐ DEBUG: چک کردن تمام منابع
+            console.log('🔍 Checking BranchId sources:');
+            console.log('  - selectedBranchId input:', $('#selectedBranchId').val());
+            console.log('  - BranchId input:', $('#BranchId').val());
+            console.log('  - Model.BranchId:', @(Model.BranchId ?? 0));
+            console.log('  - ViewBag.DefaultBranchId:', @(ViewBag.DefaultBranchId ?? 0));
+            
+            // ⭐⭐⭐ دریافت BranchId از منابع مختلف (به ترتیب اولویت)
+            var branchId = $('#selectedBranchId').val() ||          // از hidden input
+                          $('#BranchId').val() ||                   // از form field
+                          @(Model.BranchId ?? 0) ||                 // از Model
+                          @(ViewBag.DefaultBranchId ?? 0);          // از ViewBag (Controller)
+            
+            // ⭐ تبدیل به عدد
+            branchId = parseInt(branchId) || 0;
+            
+            var organizationId = $('#selectedOrganizationId').val() || 
+                                @(Model.OrganizationId ?? 0) || 
+                                null;
+            
+            console.log('🎯 QuickAdd - Final BranchId:', branchId, '(type:', typeof branchId, ')');
+            console.log('🎯 QuickAdd - OrganizationId:', organizationId);
+            
+            // ⭐ اگر هنوز BranchId نداریم، خطا نمایش بده
+            if (!branchId || branchId === 0) {
+                console.error('❌ BranchId is invalid:', branchId);
+                
+                // ⭐⭐⭐ آخرین تلاش: از Contact گرفتن BranchId
+                var contactId = @Model.ContactId;
+                if (contactId > 0) {
+                    console.log('🔄 Trying to get BranchId from Contact...');
+                    $.ajax({
+                        url: '@Url.Action("GetContactBranch", "CrmAjax", new { area = "CrmArea" })',
+                        type: 'GET',
+                        data: { contactId: contactId },
+                        async: false, // Synchronous برای سادگی
+                        success: function(response) {
+                            if (response && response.branchId) {
+                                branchId = response.branchId;
+                                console.log('✅ Got BranchId from Contact:', branchId);
+                            }
+                        }
+                    });
+                }
+                
+                // اگر هنوز صفر هست، خطا
+                if (!branchId || branchId === 0) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'شعبه مشخص نیست',
+                            html: 'برای استفاده از QuickAdd، باید به حداقل یک شعبه دسترسی داشته باشید.<br><br>' +
+                                  'لطفاً با مدیر سیستم تماس بگیرید.',
+                            icon: 'warning',
+                            confirmButtonText: 'متوجه شدم'
+                        });
+                    } else {
+                        alert('شعبه مشخص نیست! لطفاً با مدیر سیستم تماس بگیرید.');
+                    }
+                    return;
+                }
+            }
+            
+            console.log('✅ Opening QuickAdd with BranchId:', branchId);
+            openQuickAddModal(branchId, organizationId);
+        }
+
+        // ⭐ Override کردن callback بعد از QuickAdd
+        window.onQuickAddComplete = function(type, response) {
+            if (type === 'contact') {
+                // انتخاب خودکار Contact در صفحه Interaction Create
+                $('#selectedContactId').val(response.contactId);
+                
+                // نمایش اطلاعات Contact
+                NotificationHelper.success(`فرد "${response.contactName}" با موفقیت ایجاد و انتخاب شد`);
+                
+                // Reload صفحه با Contact جدید
+                window.location.href = '@Url.Action("Create", "Interaction", new { area = "CrmArea" })' + 
+                                      '?contactId=' + response.contactId;
+            } else if (type === 'organization') {
+                // انتخاب خودکار Organization
+                $('#selectedOrganizationId').val(response.organizationId);
+                
+                NotificationHelper.success(`سازمان "${response.organizationName}" با موفقیت ایجاد شد`);
+                
+                // می‌تونید Organization رو هم Reload کنید
+                // window.location.href = '...?organizationId=' + response.organizationId;
+            }
+        };
     </script>
 }

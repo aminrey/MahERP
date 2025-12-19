@@ -1,274 +1,320 @@
-﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.GoalListViewModel
+﻿@using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl
+@using MahERP.DataModelLayer.ViewModels.CrmViewModels
 @{
-    ViewData["Title"] = "لیست اهداف فروش";
-    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+    ViewData["Title"] = "اهداف فروش";
+    var userBranches = ViewBag.UserBranches as List<BranchViewModel> ?? new List<BranchViewModel>();
+    var hasSingleBranch = ViewBag.HasSingleBranch as bool? ?? false;
+    var defaultBranchId = ViewBag.DefaultBranchId as int?;
+    var defaultBranchName = ViewBag.DefaultBranchName as string;
+    var recentGoals = ViewBag.RecentGoals as List<RecentGoalItemViewModel> ?? new List<RecentGoalItemViewModel>();
 }
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">
-                    <i class="fa fa-bullseye me-2"></i>
-                    لیست اهداف فروش
-                </h4>
-            </div>
-        </div>
-    </div>
-
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fa fa-check-circle me-2"></i>
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    <!-- فیلترها -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <form method="get" asp-action="Index">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">جستجو</label>
-                        <input type="text" name="Filters.SearchTerm" value="@Model.Filters?.SearchTerm" class="form-control" placeholder="جستجو در عنوان یا محصول..." />
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">وضعیت</label>
-                        <select name="Filters.Status" class="form-select">
-                            <option value="">همه</option>
-                            <option value="Active">فعال</option>
-                            <option value="Converted">تبدیل شده</option>
-                            <option value="Inactive">غیرفعال</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">مرحله</label>
-                        <select name="Filters.LeadStageStatusId" class="form-select">
-                            <option value="">همه</option>
-                            @* باید از دیتابیس پر شود *@
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">از تاریخ</label>
-                        <input type="text" name="Filters.FromDatePersian" value="@Model.Filters?.FromDatePersian" class="form-control date-picker" />
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">تا تاریخ</label>
-                        <input type="text" name="Filters.ToDatePersian" value="@Model.Filters?.ToDatePersian" class="form-control date-picker" />
-                    </div>
-                    <div class="col-md-1 d-flex align-items-end">
-                        <button type="submit" class="btn btn-secondary w-100">
-                            <i class="fa fa-filter"></i>
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- آمار کلی -->
-    @if (Model.Statistics != null)
-    {
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card stat-card shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">کل اهداف</h6>
-                                <h3 class="mb-0">@Model.Statistics.TotalGoals</h3>
-                            </div>
-                            <div class="text-primary">
-                                <i class="fa fa-bullseye fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stat-card shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">اهداف فعال</h6>
-                                <h3 class="mb-0">@Model.Statistics.ActiveGoals</h3>
-                            </div>
-                            <div class="text-info">
-                                <i class="fa fa-play-circle fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stat-card shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">تبدیل شده</h6>
-                                <h3 class="mb-0">@Model.Statistics.ConvertedGoals</h3>
-                            </div>
-                            <div class="text-success">
-                                <i class="fa fa-check-circle fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stat-card shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">نرخ تبدیل</h6>
-                                <h3 class="mb-0">@Model.Statistics.ConversionRate%</h3>
-                            </div>
-                            <div class="text-warning">
-                                <i class="fa fa-chart-line fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-
-    <!-- لیست اهداف -->
-    <div class="card shadow-sm">
-        <div class="card-body">
-            @if (Model.Goals.Any())
-            {
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 50px">#</th>
-                                <th>عنوان</th>
-                                <th>فرد/سازمان</th>
-                                <th>محصول</th>
-                                <th>مرحله</th>
-                                <th>ارزش تخمینی</th>
-                                <th>وضعیت</th>
-                                <th>تاریخ ایجاد</th>
-                                <th style="width: 120px">عملیات</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in Model.Goals)
-                            {
-                                <tr>
-                                    <td>@item.Id</td>
-                                    <td>
-                                        <strong>@item.Title</strong>
-                                    </td>
-                                    <td>
-                                        @item.TargetName
-                                        <br />
-                                        <small class="text-muted">@item.TargetType</small>
-                                    </td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(item.ProductName))
-                                        {
-                                            @item.ProductName
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (item.CurrentLeadStageStatusTitle != null)
-                                        {
-                                            <span class="badge" style="background-color: @(item.CurrentLeadStageStatusColor ?? "#6c757d")">
-                                                @item.CurrentLeadStageStatusTitle
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (item.EstimatedValue.HasValue)
-                                        {
-                                            <span dir="ltr">@item.EstimatedValueFormatted</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (item.IsConverted)
-                                        {
-                                            <span class="badge bg-success">تبدیل شده</span>
-                                        }
-                                        else if (item.IsActive)
-                                        {
-                                            <span class="badge bg-primary">فعال</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-secondary">غیرفعال</span>
-                                        }
-                                    </td>
-                                    <td>@item.CreatedDatePersian</td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary" title="جزئیات">
-                                                <i class="fa fa-eye"></i>
-                                            </a>
-                                            @if (!item.IsConverted && item.IsActive)
-                                            {
-                                                <form asp-action="MarkAsConverted" asp-route-id="@item.Id" method="post" class="d-inline"
-                                                      onsubmit="return confirm('آیا این هدف به خرید تبدیل شده است؟');">
-                                                    @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-outline-success" title="تبدیل به خرید">
-                                                        <i class="fa fa-check"></i>
-                                                    </button>
-                                                </form>
-                                            }
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                @if (Model.TotalCount > Model.PageSize)
-                {
-                    <nav class="mt-3">
-                        <ul class="pagination justify-content-center">
-                            @for (int i = 1; i <= Math.Ceiling((double)Model.TotalCount / Model.PageSize); i++)
-                            {
-                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
-                                    <a class="page-link" asp-action="Index" asp-route-page="@i">@i</a>
-                                </li>
-                            }
-                        </ul>
-                    </nav>
-                }
-            }
-            else
-            {
-                <div class="text-center py-5 text-muted">
-                    <i class="fa fa-inbox fa-3x mb-3"></i>
-                    <p>هیچ هدفی یافت نشد</p>
-                </div>
-            }
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-bullseye text-primary me-2"></i>
+                اهداف فروش
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">CRM</li>
+                    <li class="breadcrumb-item active">اهداف</li>
+                </ol>
+            </nav>
         </div>
     </div>
 </div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <div class="row">
+        <!-- ستون اصلی -->
+        <div class="col-lg-9">
+            <!-- انتخاب شعبه و Stakeholder -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-filter me-1"></i>
+                        انتخاب شعبه و مخاطب
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <div class="row g-3">
+                        <!-- انتخاب شعبه -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">
+                                <i class="fa fa-building me-1"></i>
+                                شعبه
+                            </label>
+                            @if (hasSingleBranch && defaultBranchId.HasValue)
+                            {
+                                <div class="form-control bg-body-light">
+                                    <i class="fa fa-check-circle text-success me-1"></i>
+                                    @defaultBranchName
+                                </div>
+                                <input type="hidden" id="selectedBranchId" value="@defaultBranchId" />
+                            }
+                            else
+                            {
+                                <select id="branchSelector" class="form-select js-select2">
+                                    <option value="">انتخاب شعبه...</option>
+                                    @foreach (var branch in userBranches)
+                                    {
+                                        <option value="@branch.Id">
+                                            @branch.Name
+                                            @if (branch.IsMainBranch)
+                                            {
+                                                @(" (اصلی)")
+                                            }
+                                        </option>
+                                    }
+                                </select>
+                                <input type="hidden" id="selectedBranchId" value="" />
+                            }
+                        </div>
+
+                        <!-- نوع مخاطب -->
+                        <div class="col-md-3" id="stakeholderTypeCol" style="@(hasSingleBranch ? "" : "display: none;")">
+                            <label class="form-label fw-semibold">
+                                <i class="fa fa-user-tag me-1"></i>
+                                نوع مخاطب
+                            </label>
+                            <select id="stakeholderTypeSelector" class="form-select">
+                                <option value="contact">فرد</option>
+                                <option value="organization">سازمان</option>
+                            </select>
+                        </div>
+
+                        <!-- انتخاب مخاطب -->
+                        <div class="col-md-5" id="stakeholderSelectCol" style="@(hasSingleBranch ? "" : "display: none;")">
+                            <label class="form-label fw-semibold">
+                                <i class="fa fa-search me-1"></i>
+                                جستجو و انتخاب
+                            </label>
+                            <div id="contactSelectDiv" style="display: block;">
+                                <select id="contactSelector" class="form-select js-select2-ajax" 
+                                        data-placeholder="جستجوی فرد...">
+                                </select>
+                            </div>
+                            <div id="organizationSelectDiv" style="display: none;">
+                                <select id="organizationSelector" class="form-select js-select2-ajax"
+                                        data-placeholder="جستجوی سازمان...">
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- محتوای اهداف Stakeholder -->
+            <div id="stakeholderGoalsArea">
+                <!-- این بخش با AJAX پر می‌شود -->
+                <div class="block block-rounded">
+                    <div class="block-content text-center py-5">
+                        <i class="fa fa-hand-pointer fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">لطفاً یک شعبه و مخاطب انتخاب کنید</h4>
+                        <p class="text-muted small">پس از انتخاب، اهداف مرتبط نمایش داده خواهد شد</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ستون کناری - 10 هدف اخیر -->
+        <div class="col-lg-3">
+            <div class="block block-rounded">
+                <div class="block-header block-header-default bg-primary-dark">
+                    <h3 class="block-title text-white">
+                        <i class="fa fa-clock me-1"></i>
+                        اهداف اخیر
+                    </h3>
+                    <div class="block-options">
+                        <button type="button" class="btn-block-option text-white" onclick="refreshRecentGoals()" title="بروزرسانی">
+                            <i class="fa fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content p-0" id="recentGoalsSidebar">
+                    @await Html.PartialAsync("_RecentGoalsSidebar", new RecentGoalsViewModel { Goals = recentGoals })
+                </div>
+            </div>
+
+            <!-- دکمه ثبت هدف جدید -->
+            <div class="block block-rounded bg-success-light">
+                <div class="block-content text-center py-4">
+                    <a asp-action="Create" class="btn btn-success btn-lg">
+                        <i class="fa fa-plus-circle me-2"></i>
+                        ثبت هدف جدید
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->
 
 @section Scripts {
     <script>
-        $(".date-picker").persianDatepicker({
-            format: 'YYYY/MM/DD',
-            autoClose: true
+        $(document).ready(function() {
+            // Initialize Select2
+            initializeSelect2();
+            
+            // Event handlers
+            setupEventHandlers();
+            
+            // اگر شعبه پیش‌فرض داریم، فعال کن
+            @if (hasSingleBranch && defaultBranchId.HasValue)
+            {
+                <text>
+                $('#stakeholderTypeCol, #stakeholderSelectCol').show();
+                </text>
+            }
         });
+
+        function initializeSelect2() {
+            $('.js-select2').select2({
+                width: '100%',
+                allowClear: true
+            });
+
+            // Contact selector با AJAX
+            $('#contactSelector').select2({
+                width: '100%',
+                allowClear: true,
+                placeholder: 'جستجوی فرد...',
+                ajax: {
+                    url: '@Url.Action("SearchContacts", "CrmAjax", new { area = "CrmArea" })',
+                    dataType: 'json',
+                    delay: 300,
+                    data: function(params) {
+                        return {
+                            term: params.term,
+                            branchId: $('#selectedBranchId').val() || $('#branchSelector').val()
+                        };
+                    },
+                    processResults: function(data) {
+                        return { results: data.results || [] };
+                    }
+                }
+            });
+
+            // Organization selector با AJAX
+            $('#organizationSelector').select2({
+                width: '100%',
+                allowClear: true,
+                placeholder: 'جستجوی سازمان...',
+                ajax: {
+                    url: '@Url.Action("SearchOrganizations", "CrmAjax", new { area = "CrmArea" })',
+                    dataType: 'json',
+                    delay: 300,
+                    data: function(params) {
+                        return {
+                            term: params.term,
+                            branchId: $('#selectedBranchId').val() || $('#branchSelector').val()
+                        };
+                    },
+                    processResults: function(data) {
+                        return { results: data.results || [] };
+                    }
+                }
+            });
+        }
+
+        function setupEventHandlers() {
+            // تغییر شعبه
+            $('#branchSelector').on('change', function() {
+                var branchId = $(this).val();
+                $('#selectedBranchId').val(branchId);
+                
+                if (branchId) {
+                    $('#stakeholderTypeCol, #stakeholderSelectCol').fadeIn();
+                    // Reset selectors
+                    $('#contactSelector, #organizationSelector').val(null).trigger('change');
+                    clearStakeholderGoals();
+                } else {
+                    $('#stakeholderTypeCol, #stakeholderSelectCol').fadeOut();
+                    clearStakeholderGoals();
+                }
+            });
+
+            // تغییر نوع مخاطب
+            $('#stakeholderTypeSelector').on('change', function() {
+                var type = $(this).val();
+                if (type === 'contact') {
+                    $('#contactSelectDiv').show();
+                    $('#organizationSelectDiv').hide();
+                    $('#organizationSelector').val(null).trigger('change');
+                } else {
+                    $('#contactSelectDiv').hide();
+                    $('#organizationSelectDiv').show();
+                    $('#contactSelector').val(null).trigger('change');
+                }
+                clearStakeholderGoals();
+            });
+
+            // انتخاب Contact
+            $('#contactSelector').on('change', function() {
+                var contactId = $(this).val();
+                if (contactId) {
+                    loadStakeholderGoals(contactId, null);
+                } else {
+                    clearStakeholderGoals();
+                }
+            });
+
+            // انتخاب Organization
+            $('#organizationSelector').on('change', function() {
+                var orgId = $(this).val();
+                if (orgId) {
+                    loadStakeholderGoals(null, orgId);
+                } else {
+                    clearStakeholderGoals();
+                }
+            });
+        }
+
+        function loadStakeholderGoals(contactId, organizationId) {
+            var branchId = $('#selectedBranchId').val() || $('#branchSelector').val();
+            
+            $('#stakeholderGoalsArea').html('<div class="block block-rounded block-mode-loading"><div class="block-content text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-3 text-muted">در حال بارگذاری...</p></div></div>');
+            
+            $.ajax({
+                url: '@Url.Action("LoadStakeholderGoals", "Goal", new { area = "CrmArea" })',
+                type: 'POST',
+                data: {
+                    contactId: contactId,
+                    organizationId: organizationId,
+                    branchId: branchId,
+                    __RequestVerificationToken: getAntiForgeryToken()
+                },
+                success: function(html) {
+                    $('#stakeholderGoalsArea').html(html);
+                },
+                error: function(xhr) {
+                    $('#stakeholderGoalsArea').html('<div class="alert alert-danger"><i class="fa fa-exclamation-circle me-2"></i>خطا در بارگذاری اطلاعات</div>');
+                    console.error('Error loading stakeholder goals:', xhr);
+                }
+            });
+        }
+
+        function clearStakeholderGoals() {
+            $('#stakeholderGoalsArea').html(`
+                <div class="block block-rounded">
+                    <div class="block-content text-center py-5">
+                        <i class="fa fa-hand-pointer fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">لطفاً یک مخاطب انتخاب کنید</h4>
+                        <p class="text-muted small">پس از انتخاب، اهداف مرتبط نمایش داده خواهد شد</p>
+                    </div>
+                </div>
+            `);
+        }
+
+        function refreshRecentGoals() {
+            $.get('@Url.Action("GetRecentGoals", "Goal", new { area = "CrmArea" })', function(html) {
+                $('#recentGoalsSidebar').html(html);
+            });
+        }
     </script>
 }

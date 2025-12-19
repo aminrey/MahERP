@@ -1,6 +1,8 @@
-﻿using MahERP.DataModelLayer.Entities.Contacts;
+﻿using MahERP.CommonLayer.PublicClasses;
+using MahERP.DataModelLayer.Entities.Contacts;
 using MahERP.DataModelLayer.Entities.Crm;
 using MahERP.DataModelLayer.Enums;
+using MahERP.DataModelLayer.Extensions;
 using MahERP.DataModelLayer.ViewModels.CrmViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -278,6 +280,205 @@ namespace MahERP.DataModelLayer.Repository.CrmRepository
         {
             return await _context.Interaction_Tbl
                 .CountAsync(i => i.ContactId == contactId && i.IsActive);
+        }
+
+        /// <summary>
+        /// دریافت تعاملات یک هدف خاص با صفحه‌بندی
+        /// </summary>
+        public async Task<(List<Interaction> Interactions, int TotalCount)> GetByGoalAsync(
+            int goalId, InteractionFilterViewModel? filter = null, int pageNumber = 1, int pageSize = 10)
+        {
+            var query = _context.Interaction_Tbl
+                .Include(i => i.Contact)
+                .Include(i => i.InteractionType)
+                    .ThenInclude(t => t.LeadStageStatus)
+                .Include(i => i.PostPurchaseStage)
+                .Include(i => i.Creator)
+                .Where(i => i.IsActive && i.InteractionGoals.Any(ig => ig.GoalId == goalId));
+
+            // Apply filters
+            query = ApplyFilters(query, filter);
+
+            var totalCount = await query.CountAsync();
+
+            var interactions = await query
+                .OrderByDescending(i => i.InteractionDate)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (interactions, totalCount);
+        }
+
+        /// <summary>
+        /// دریافت تعاملات یک Contact با صفحه‌بندی
+        /// </summary>
+        public async Task<(List<Interaction> Interactions, int TotalCount)> GetByContactPagedAsync(
+            int contactId, InteractionFilterViewModel? filter = null, int pageNumber = 1, int pageSize = 10)
+        {
+            var query = _context.Interaction_Tbl
+                .Include(i => i.Contact)
+                .Include(i => i.InteractionType)
+                    .ThenInclude(t => t.LeadStageStatus)
+                .Include(i => i.PostPurchaseStage)
+                .Include(i => i.Creator)
+                .Include(i => i.InteractionGoals)
+                    .ThenInclude(ig => ig.Goal)
+                .Where(i => i.IsActive && i.ContactId == contactId);
+
+            // Apply filters
+            query = ApplyFilters(query, filter);
+
+            var totalCount = await query.CountAsync();
+
+            var interactions = await query
+                .OrderByDescending(i => i.InteractionDate)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (interactions, totalCount);
+        }
+
+        /// <summary>
+        /// دریافت تعاملات یک Organization با صفحه‌بندی
+        /// </summary>
+        public async Task<(List<Interaction> Interactions, int TotalCount)> GetByOrganizationPagedAsync(
+            int organizationId, InteractionFilterViewModel? filter = null, int pageNumber = 1, int pageSize = 10)
+        {
+            // دریافت تمام Contact های مرتبط با سازمان
+            var contactIds = await _context.OrganizationContact_Tbl
+                .Where(oc => oc.OrganizationId == organizationId && oc.IsActive)
+                .Select(oc => oc.ContactId)
+                .Distinct()
+                .ToListAsync();
+
+            // همچنین اعضای چارت سازمانی
+            var deptMemberContactIds = await _context.DepartmentMember_Tbl
+                .Include(dm => dm.Department)
+                .Where(dm => dm.Department.OrganizationId == organizationId && dm.IsActive)
+                .Select(dm => dm.ContactId)
+                .Distinct()
+                .ToListAsync();
+
+            var allContactIds = contactIds.Union(deptMemberContactIds).Distinct().ToList();
+
+            var query = _context.Interaction_Tbl
+                .Include(i => i.Contact)
+                .Include(i => i.InteractionType)
+                    .ThenInclude(t => t.LeadStageStatus)
+                .Include(i => i.PostPurchaseStage)
+                .Include(i => i.Creator)
+                .Include(i => i.InteractionGoals)
+                    .ThenInclude(ig => ig.Goal)
+                .Where(i => i.IsActive && allContactIds.Contains(i.ContactId));
+
+            // Apply filters
+            query = ApplyFilters(query, filter);
+
+            var totalCount = await query.CountAsync();
+
+            var interactions = await query
+                .OrderByDescending(i => i.InteractionDate)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (interactions, totalCount);
+        }
+
+        /// <summary>
+        /// دریافت 10 تعامل اخیر کل سیستم
+        /// </summary>
+        public async Task<List<RecentInteractionItemViewModel>> GetRecentInteractionsAsync(int count = 10)
+        {
+            var interactions = await _context.Interaction_Tbl
+                .Include(i => i.Contact)
+                .Include(i => i.InteractionType)
+                .Where(i => i.IsActive)
+                .OrderByDescending(i => i.InteractionDate)
+                .Take(count)
+                .Select(i => new RecentInteractionItemViewModel
+                {
+                    Id = i.Id,
+                    Subject = i.Subject ?? "بدون موضوع",
+                    ContactName = i.Contact != null ? i.Contact.FirstName + " " + i.Contact.LastName : "نامشخص",
+                    InteractionTypeName = i.InteractionType != null ? i.InteractionType.Title : "نامشخص",
+                    InteractionTypeColor = i.InteractionType != null ? i.InteractionType.ColorCode : "#6c757d",
+                    InteractionTypeIcon = i.InteractionType != null ? i.InteractionType.Icon : "fa-comment",
+                    DatePersian = "", // Will be set after query
+                    TimeAgo = "" // Will be calculated after query
+                })
+                .ToListAsync();
+
+            // محاسبه زمان‌های شمسی و TimeAgo
+            var now = DateTime.Now;
+            foreach (var item in interactions)
+            {
+                var interaction = await _context.Interaction_Tbl
+                    .Where(i => i.Id == item.Id)
+                    .Select(i => i.InteractionDate)
+                    .FirstOrDefaultAsync();
+
+                item.DatePersian = ConvertDateTime.ConvertMiladiToShamsi(interaction, "yyyy/MM/dd");
+                item.TimeAgo = GetTimeAgo(interaction, now);
+            }
+
+            return interactions;
+        }
+
+        /// <summary>
+        /// Apply filters to query
+        /// </summary>
+        private IQueryable<Interaction> ApplyFilters(IQueryable<Interaction> query, InteractionFilterViewModel? filter)
+        {
+            if (filter == null) return query;
+
+            if (filter.InteractionTypeId.HasValue)
+                query = query.Where(i => i.InteractionTypeId == filter.InteractionTypeId.Value);
+
+            if (filter.PostPurchaseStageId.HasValue)
+                query = query.Where(i => i.PostPurchaseStageId == filter.PostPurchaseStageId.Value);
+
+            if (filter.FromDate.HasValue)
+                query = query.Where(i => i.InteractionDate >= filter.FromDate.Value);
+
+            if (filter.ToDate.HasValue)
+                query = query.Where(i => i.InteractionDate <= filter.ToDate.Value);
+
+            if (!string.IsNullOrEmpty(filter.SearchText))
+            {
+                var search = filter.SearchText.ToLower();
+                query = query.Where(i =>
+                    (i.Subject != null && i.Subject.ToLower().Contains(search)) ||
+                    i.Description.ToLower().Contains(search) ||
+                    (i.Result != null && i.Result.ToLower().Contains(search)));
+            }
+
+            return query;
+        }
+
+        /// <summary>
+        /// محاسبه "زمان پیش" به فارسی
+        /// </summary>
+        private string GetTimeAgo(DateTime date, DateTime now)
+        {
+            var diff = now - date;
+
+            if (diff.TotalMinutes < 1)
+                return "همین الان";
+            if (diff.TotalMinutes < 60)
+                return $"{(int)diff.TotalMinutes} دقیقه پیش";
+            if (diff.TotalHours < 24)
+                return $"{(int)diff.TotalHours} ساعت پیش";
+            if (diff.TotalDays < 7)
+                return $"{(int)diff.TotalDays} روز پیش";
+            if (diff.TotalDays < 30)
+                return $"{(int)(diff.TotalDays / 7)} هفته پیش";
+            if (diff.TotalDays < 365)
+                return $"{(int)(diff.TotalDays / 30)} ماه پیش";
+
+            return $"{(int)(diff.TotalDays / 365)} سال پیش";
         }
 
         /// <summary>

@@ -1,0 +1,87 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>QuickAdd URL Tester</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        button { margin: 5px; padding: 10px 20px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 QuickAdd URL Tester</h1>
+    
+    <div>
+        <label>Branch ID: <input type="number" id="branchId" value="2" /></label>
+    </div>
+    
+    <h2>Test URLs:</h2>
+    
+    <div class="test">
+        <h3>1. SelectTypeModal</h3>
+        <button onclick="testUrl('SelectTypeModal')">Test</button>
+        <div id="result1"></div>
+    </div>
+    
+    <div class="test">
+        <h3>2. QuickAddContactModal</h3>
+        <button onclick="testUrl('QuickAddContactModal')">Test</button>
+        <div id="result2"></div>
+    </div>
+    
+    <div class="test">
+        <h3>3. QuickAddOrganizationModal</h3>
+        <button onclick="testUrl('QuickAddOrganizationModal')">Test</button>
+        <div id="result3"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function testUrl(action) {
+            const branchId = $('#branchId').val();
+            const url = `/CrmArea/QuickAdd/${action}?branchId=${branchId}`;
+            
+            const resultDiv = action === 'SelectTypeModal' ? '#result1' : 
+                             action === 'QuickAddContactModal' ? '#result2' : '#result3';
+            
+            $(resultDiv).html('⏳ Testing...');
+            
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function(response) {
+                    $(resultDiv).html(`
+                        <div class="success">
+                            ✅ Success!<br>
+                            URL: ${url}<br>
+                            Response Length: ${response.length} chars<br>
+                            <details>
+                                <summary>View Response</summary>
+                                <pre>${response.substring(0, 500)}</pre>
+                            </details>
+                        </div>
+                    `);
+                },
+                error: function(xhr) {
+                    $(resultDiv).html(`
+                        <div class="error">
+                            ❌ Error!<br>
+                            URL: ${url}<br>
+                            Status: ${xhr.status}<br>
+                            Message: ${xhr.statusText}<br>
+                            Response: ${xhr.responseText.substring(0, 200)}
+                        </div>
+                    `);
+                }
+            });
+        }
+        
+        // Auto-test on load
+        $(document).ready(function() {
+            console.log('QuickAdd URL Tester loaded');
+        });
+    </script>
+</body>
+</html>

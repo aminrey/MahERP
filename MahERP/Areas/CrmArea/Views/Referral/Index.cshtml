@@ -1,43 +1,40 @@
 ﻿@model List<MahERP.DataModelLayer.ViewModels.CrmViewModels.ReferralViewModel>
+@using MahERP.DataModelLayer.Enums
 @{
-    ViewData["Title"] = "ارجاعات " + ViewBag.ContactName;
-    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
-    var isReferrer = ViewBag.IsReferrer ?? false;
+    ViewData["Title"] = "مدیریت ارجاعات";
+    
+    var totalCount = ViewBag.TotalCount as int? ?? 0;
+    var pendingCount = ViewBag.PendingCount as int? ?? 0;
+    var successfulCount = ViewBag.SuccessfulCount as int? ?? 0;
+    var failedCount = ViewBag.FailedCount as int? ?? 0;
+    
+    var currentSearchTerm = ViewBag.CurrentSearchTerm as string;
+    var currentStatus = ViewBag.CurrentStatus as ReferralStatus?;
+    var currentPage = ViewBag.CurrentPage as int? ?? 1;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
 }
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <nav aria-label="breadcrumb">
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-users text-primary me-2"></i>
+                مدیریت ارجاعات
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item">
-                        <a asp-controller="Contact" asp-action="Index" asp-area="ContactArea">افراد</a>
-                    </li>
-                    <li class="breadcrumb-item active">
-                        @if (isReferrer)
-                        {
-                            <text>افراد معرفی شده توسط @ViewBag.ContactName</text>
-                        }
-                        else
-                        {
-                            <text>معرف @ViewBag.ContactName</text>
-                        }
-                    </li>
+                    <li class="breadcrumb-item">CRM</li>
+                    <li class="breadcrumb-item active">ارجاعات</li>
                 </ol>
             </nav>
-            <h4 class="mb-0">
-                <i class="fa fa-users me-2"></i>
-                @if (isReferrer)
-                {
-                    <text>افراد معرفی شده توسط @ViewBag.ContactName</text>
-                }
-                else
-                {
-                    <text>معرف @ViewBag.ContactName</text>
-                }
-            </h4>
         </div>
     </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
 
     @if (TempData["SuccessMessage"] != null)
     {
@@ -48,55 +45,188 @@
         </div>
     }
 
-    @if (Model.Any())
+    @if (TempData["ErrorMessage"] != null)
     {
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 50px">#</th>
-                                @if (isReferrer)
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa fa-times-circle me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- آمار -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-chart-bar me-1"></i>
+                آمار سریع
+            </h3>
+        </div>
+        <div class="block-content">
+            <div class="row g-sm">
+                <div class="col-6 col-md-3">
+                    <a asp-action="Index" class="text-decoration-none">
+                        <div class="p-3 bg-body-light rounded text-center hover-lift @(currentStatus == null ? "border border-2 border-primary" : "")">
+                            <div class="fs-3 fw-semibold text-primary">@totalCount</div>
+                            <div class="text-muted">کل ارجاعات</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a asp-action="Index" asp-route-status="@ReferralStatus.Pending" class="text-decoration-none">
+                        <div class="p-3 bg-body-light rounded text-center hover-lift @(currentStatus == ReferralStatus.Pending ? "border border-2 border-warning" : "")">
+                            <div class="fs-3 fw-semibold text-warning">@pendingCount</div>
+                            <div class="text-muted">در انتظار</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a asp-action="Index" asp-route-status="@ReferralStatus.Successful" class="text-decoration-none">
+                        <div class="p-3 bg-body-light rounded text-center hover-lift @(currentStatus == ReferralStatus.Successful ? "border border-2 border-success" : "")">
+                            <div class="fs-3 fw-semibold text-success">@successfulCount</div>
+                            <div class="text-muted">موفق</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a asp-action="Index" asp-route-status="@ReferralStatus.Failed" class="text-decoration-none">
+                        <div class="p-3 bg-body-light rounded text-center hover-lift @(currentStatus == ReferralStatus.Failed ? "border border-2 border-danger" : "")">
+                            <div class="fs-3 fw-semibold text-danger">@failedCount</div>
+                            <div class="text-muted">ناموفق</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- فیلترها -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-filter me-1"></i>
+                فیلترها
+            </h3>
+            <div class="block-options">
+                <button type="button" class="btn-block-option" data-toggle="block-option" data-action="content_toggle"></button>
+            </div>
+        </div>
+        <div class="block-content">
+            <form method="get" asp-action="Index">
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label">جستجو</label>
+                        <input type="text" name="searchTerm" value="@currentSearchTerm" class="form-control" placeholder="نام معرف، فرد معرفی شده، یادداشت..." />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">وضعیت</label>
+                        <select name="status" class="form-select">
+                            <option value="">همه</option>
+                            @{
+                                var statusOptions = new[] {
+                                    new { Value = ReferralStatus.Pending, Text = "در انتظار" },
+                                    new { Value = ReferralStatus.Successful, Text = "موفق" },
+                                    new { Value = ReferralStatus.Failed, Text = "ناموفق" }
+                                };
+                            }
+                            @foreach (var opt in statusOptions)
+                            {
+                                if (currentStatus == opt.Value)
                                 {
-                                    <th>فرد معرفی شده</th>
-                                    <th>نوع</th>
+                                    <option value="@((int)opt.Value)" selected>@opt.Text</option>
                                 }
                                 else
                                 {
-                                    <th>معرف</th>
+                                    <option value="@((int)opt.Value)">@opt.Text</option>
                                 }
-                                <th>تاریخ ارجاع</th>
-                                <th>وضعیت</th>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-alt-primary">
+                            <i class="fa fa-search me-1"></i>
+                            جستجو
+                        </button>
+                        <a asp-action="Index" class="btn btn-alt-secondary">
+                            <i class="fa fa-times me-1"></i>
+                            پاک کردن
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- لیست ارجاعات -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-list me-1"></i>
+                لیست ارجاعات
+                <span class="badge bg-primary ms-1">@Model.Count مورد</span>
+            </h3>
+        </div>
+        <div class="block-content block-content-full">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-vcenter table-hover">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 50px">#</th>
+                                <th>معرف</th>
+                                <th>فرد معرفی شده</th>
+                                <th class="text-center">نوع</th>
+                                <th class="text-center">تاریخ ارجاع</th>
+                                <th class="text-center">وضعیت</th>
                                 <th>یادداشت</th>
-                                <th style="width: 120px">عملیات</th>
+                                <th class="text-center" style="width: 150px">عملیات</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var item in Model)
                             {
                                 <tr>
-                                    <td>@item.Id</td>
-                                    @if (isReferrer)
-                                    {
-                                        <td>
-                                            <strong>@item.ReferredContactName</strong>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-secondary">
-                                                @(item.ReferredContactType == MahERP.DataModelLayer.Enums.ContactType.Lead ? "سرنخ" : 
-                                                  item.ReferredContactType == MahERP.DataModelLayer.Enums.ContactType.Customer ? "مشتری" : "سایر")
-                                            </span>
-                                        </td>
-                                    }
-                                    else
-                                    {
-                                        <td>
-                                            <strong>@item.ReferrerContactName</strong>
-                                        </td>
-                                    }
-                                    <td>@item.ReferralDatePersian</td>
+                                    <td class="text-center text-muted">@item.Id</td>
                                     <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fa fa-user-check text-primary me-2"></i>
+                                            <div>
+                                                <strong>@item.ReferrerContactName</strong>
+                                                <br />
+                                                <a asp-action="ByReferrer" asp-route-contactId="@item.ReferrerContactId" class="small text-muted">
+                                                    مشاهده همه معرفی‌ها
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fa fa-user-plus text-info me-2"></i>
+                                            <strong>@item.ReferredContactName</strong>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        @{
+                                            var contactTypeName = item.ReferredContactType switch
+                                            {
+                                                ContactType.Lead => "سرنخ",
+                                                ContactType.Customer => "مشتری",
+                                                _ => "سایر"
+                                            };
+                                            var contactTypeColor = item.ReferredContactType switch
+                                            {
+                                                ContactType.Lead => "warning",
+                                                ContactType.Customer => "success",
+                                                _ => "secondary"
+                                            };
+                                        }
+                                        <span class="badge bg-@contactTypeColor">@contactTypeName</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <small>@item.ReferralDatePersian</small>
+                                    </td>
+                                    <td class="text-center">
                                         <span class="badge" style="background-color: @item.StatusColor">
                                             @item.StatusName
                                         </span>
@@ -104,7 +234,7 @@
                                     <td>
                                         @if (!string.IsNullOrEmpty(item.Notes))
                                         {
-                                            <small class="text-muted">
+                                            <small class="text-muted" title="@item.Notes">
                                                 @(item.Notes.Length > 30 ? item.Notes.Substring(0, 30) + "..." : item.Notes)
                                             </small>
                                         }
@@ -113,25 +243,21 @@
                                             <span class="text-muted">-</span>
                                         }
                                     </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary" title="جزئیات">
+                                    <td class="text-center">
+                                        <div class="btn-group">
+                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-alt-primary" title="جزئیات">
                                                 <i class="fa fa-eye"></i>
                                             </a>
-                                            @if (item.Status == MahERP.DataModelLayer.Enums.ReferralStatus.Pending)
+                                            @if (item.Status == ReferralStatus.Pending)
                                             {
-                                                <form asp-action="MarkAsSuccessful" asp-route-id="@item.Id" method="post" class="d-inline">
-                                                    @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-outline-success" title="موفق">
-                                                        <i class="fa fa-check"></i>
-                                                    </button>
-                                                </form>
-                                                <form asp-action="MarkAsFailed" asp-route-id="@item.Id" method="post" class="d-inline">
-                                                    @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-outline-danger" title="ناموفق">
-                                                        <i class="fa fa-times"></i>
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="btn btn-sm btn-alt-success" title="موفق"
+                                                        onclick="changeReferralStatus(@item.Id, 'MarkAsSuccessful', 'موفق')">
+                                                    <i class="fa fa-check"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-alt-danger" title="ناموفق"
+                                                        onclick="changeReferralStatus(@item.Id, 'MarkAsFailed', 'ناموفق')">
+                                                    <i class="fa fa-times"></i>
+                                                </button>
                                             }
                                         </div>
                                     </td>
@@ -140,45 +266,129 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="card shadow-sm">
-            <div class="card-body text-center py-5 text-muted">
-                <i class="fa fa-users fa-3x mb-3"></i>
-                @if (isReferrer)
+
+                <!-- Pagination -->
+                @if (totalPages > 1)
                 {
-                    <p>این مشتری هنوز کسی را معرفی نکرده است</p>
+                    <nav class="d-flex justify-content-center mt-4">
+                        <ul class="pagination mb-0">
+                            @if (currentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" asp-action="Index" asp-route-page="@(currentPage - 1)" 
+                                       asp-route-searchTerm="@currentSearchTerm" asp-route-status="@currentStatus">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            }
+                            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                    <a class="page-link" asp-action="Index" asp-route-page="@i"
+                                       asp-route-searchTerm="@currentSearchTerm" asp-route-status="@currentStatus">@i</a>
+                                </li>
+                            }
+                            @if (currentPage < totalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" asp-action="Index" asp-route-page="@(currentPage + 1)"
+                                       asp-route-searchTerm="@currentSearchTerm" asp-route-status="@currentStatus">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
                 }
-                else
-                {
-                    <p>این فرد توسط کسی معرفی نشده است</p>
-                }
-            </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fa fa-users fa-4x text-muted"></i>
+                    </div>
+                    <h4 class="text-muted mb-2">هیچ ارجاعی یافت نشد</h4>
+                    <p class="text-muted">ارجاعات از طریق تعاملات با مشتریان ثبت می‌شوند</p>
+                </div>
+            }
         </div>
-    }
+    </div>
 
     <!-- راهنما -->
-    <div class="card shadow-sm mt-4">
-        <div class="card-header bg-light">
-            <h6 class="mb-0">
-                <i class="fa fa-info-circle me-2"></i>
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-info-circle me-1"></i>
                 درباره ارجاعات
-            </h6>
+            </h3>
+            <div class="block-options">
+                <button type="button" class="btn-block-option" data-toggle="block-option" data-action="content_toggle"></button>
+            </div>
         </div>
-        <div class="card-body">
-            <p class="mb-2"><strong>ارجاع چیست؟</strong></p>
-            <p class="small mb-3">
-                ارجاع یعنی یک مشتری، شخص یا سازمان دیگری را به شما معرفی می‌کند. 
-                پیگیری ارجاعات به شما کمک می‌کند تا بهترین مشتریان خود را شناسایی و جایزه دهید.
-            </p>
-            <ul class="small mb-0">
-                <li><strong>در انتظار:</strong> ارجاع ثبت شده اما هنوز پیگیری نشده</li>
-                <li><strong>موفق:</strong> فرد معرفی شده به مشتری تبدیل شده</li>
-                <li><strong>ناموفق:</strong> فرد معرفی شده به مشتری تبدیل نشده</li>
-            </ul>
+        <div class="block-content">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="fw-semibold mb-2">ارجاع چیست؟</p>
+                    <p class="text-muted small">
+                        ارجاع یعنی یک مشتری، شخص یا سازمان دیگری را به شما معرفی می‌کند. 
+                        پیگیری ارجاعات به شما کمک می‌کند تا بهترین مشتریان خود را شناسایی و جایزه دهید.
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p class="fw-semibold mb-2">وضعیت‌های ارجاع:</p>
+                    <ul class="text-muted small mb-0">
+                        <li><span class="badge bg-warning">در انتظار</span> - ارجاع ثبت شده اما هنوز پیگیری نشده</li>
+                        <li><span class="badge bg-success">موفق</span> - فرد معرفی شده به مشتری تبدیل شده</li>
+                        <li><span class="badge bg-danger">ناموفق</span> - فرد معرفی شده به مشتری تبدیل نشده</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+<!-- END Page Content -->
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        function changeReferralStatus(referralId, action, statusName) {
+            showConfirmationSwal({
+                title: 'تغییر وضعیت',
+                text: 'آیا مطمئن هستید که می‌خواهید وضعیت این ارجاع را به "' + statusName + '" تغییر دهید؟',
+                icon: 'question',
+                confirmButtonText: 'بله، تغییر بده',
+                cancelButtonText: 'انصراف'
+            }).then(function(confirmed) {
+                if (confirmed) {
+                    var form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '@Url.Action("Index", "Referral", new { area = "CrmArea" })'.replace('Index', action) + '?id=' + referralId;
+                    
+                    var token = document.querySelector('input[name="__RequestVerificationToken"]');
+                    if (token) {
+                        var tokenInput = document.createElement('input');
+                        tokenInput.type = 'hidden';
+                        tokenInput.name = '__RequestVerificationToken';
+                        tokenInput.value = token.value;
+                        form.appendChild(tokenInput);
+                    }
+                    
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
+    </script>
+    
+    <style>
+        .hover-lift {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .hover-lift:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+}

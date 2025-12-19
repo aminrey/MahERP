@@ -28,6 +28,19 @@ namespace MahERP.DataModelLayer.Repository.CrmRepository
             _logger = logger;
         }
 
+        /// <summary>
+        /// دریافت همه ارجاعات
+        /// </summary>
+        public async Task<List<Referral>> GetAllAsync()
+        {
+            return await _context.Referral_Tbl
+                .Include(r => r.ReferrerContact)
+                .Include(r => r.ReferredContact)
+                .Include(r => r.Creator)
+                .OrderByDescending(r => r.ReferralDate)
+                .ToListAsync();
+        }
+
         public async Task<Referral?> GetByIdAsync(int id)
         {
             return await _context.Referral_Tbl

@@ -1,72 +1,121 @@
 ﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.GoalViewModel
 @{
-    ViewData["Title"] = "جزئیات هدف";
-    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+    ViewData["Title"] = "جزئیات هدف - " + Model.Title;
+
+    // تعیین رنگ و وضعیت
+    string statusColor = "primary";
+    string statusText = "فعال";
+    string statusIcon = "fa-play-circle";
+
+    if (!Model.IsActive)
+    {
+        statusColor = "secondary"; statusText = "غیرفعال"; statusIcon = "fa-pause-circle";
+    }
+    else if (Model.IsConverted)
+    {
+        statusColor = "success"; statusText = "تبدیل شده"; statusIcon = "fa-check-double";
+    }
 }
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item">
-                        <a asp-action="ByContact" asp-route-contactId="@Model.ContactId">اهداف</a>
-                    </li>
-                    <li class="breadcrumb-item active">جزئیات</li>
-                </ol>
-            </nav>
-            <div class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">
-                    <i class="fa fa-bullseye me-2"></i>
+<!-- Hero -->
+<div class="bg-@statusColor-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center py-2">
+            <div class="flex-grow-1 mb-1 mb-md-0">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-@statusColor me-2">
+                        <i class="fa @statusIcon me-1"></i>
+                        @statusText
+                    </span>
+                    @if (Model.CurrentLeadStageStatusTitle != null)
+                    {
+                        <span class="badge" style="background-color: @(Model.CurrentLeadStageStatusColor ?? "#6c757d")">
+                            @Model.CurrentLeadStageStatusTitle
+                        </span>
+                    }
+                </div>
+                <h1 class="fs-3 fw-semibold mb-2">
+                    <i class="fa fa-bullseye text-@statusColor me-2"></i>
                     @Model.Title
-                    @if (Model.IsConverted)
+                </h1>
+                <p class="mb-0 text-muted">
+                    <i class="fa @(Model.TargetType == "Contact" ? "fa-user" : "fa-building") me-1"></i>
+                    @Model.TargetName
+                    <span class="mx-2">•</span>
+                    <i class="fa fa-calendar me-1"></i>
+                    @Model.CreatedDatePersian
+                    @if (!string.IsNullOrEmpty(Model.CreatorName))
                     {
-                        <span class="badge bg-success ms-2">تبدیل شده</span>
+                        <span class="mx-2">•</span>
+                        <i class="fa fa-user-edit me-1"></i>
+                        @Model.CreatorName
                     }
-                    else if (!Model.IsActive)
-                    {
-                        <span class="badge bg-secondary ms-2">غیرفعال</span>
-                    }
-                </h4>
-                <div>
-                    @if (!Model.IsConverted && Model.IsActive)
-                    {
-                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#conversionModal">
-                            <i class="fa fa-check me-1"></i>
-                            تبدیل به خرید
-                        </button>
-                    }
-                    <form asp-action="Delete" asp-route-id="@Model.Id" asp-route-contactId="@Model.ContactId" method="post" class="d-inline"
-                          onsubmit="return confirm('آیا از غیرفعال کردن این هدف مطمئن هستید؟');">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-outline-danger">
-                            <i class="fa fa-ban me-1"></i>
-                            غیرفعال کردن
-                        </button>
-                    </form>
+                </p>
+            </div>
+            <div class="flex-shrink-0 mt-3 mt-md-0">
+                @if (!Model.IsConverted && Model.IsActive)
+                {
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#conversionModal">
+                        <i class="fa fa-check-double me-1"></i>
+                        تبدیل به خرید
+                    </button>
+                }
+                <div class="btn-group">
+                    <button type="button" class="btn btn-alt-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fa fa-cog"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end">
+                        @if (Model.IsActive && !Model.IsConverted)
+                        {
+                            <form asp-action="Delete" asp-route-id="@Model.Id" asp-route-contactId="@Model.ContactId" asp-route-organizationId="@Model.OrganizationId" method="post"
+                                  onsubmit="return confirm('آیا از غیرفعال کردن این هدف مطمئن هستید؟');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="fa fa-ban me-1"></i>
+                                    غیرفعال کردن
+                                </button>
+                            </form>
+                        }
+                        <a class="dropdown-item" asp-action="Index">
+                            <i class="fa fa-list me-1"></i>
+                            لیست اهداف
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-alt">
+                <li class="breadcrumb-item">CRM</li>
+                <li class="breadcrumb-item">
+                    <a asp-action="Index">اهداف</a>
+                </li>
+                <li class="breadcrumb-item active">جزئیات</li>
+            </ol>
+        </nav>
     </div>
+</div>
+<!-- END Hero -->
 
+<!-- Page Content -->
+<div class="content">
     <div class="row">
-        <!-- اطلاعات اصلی -->
+        <!-- ستون اصلی -->
         <div class="col-lg-8">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0">
-                        <i class="fa fa-info-circle me-2"></i>
+            <!-- اطلاعات هدف -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-info-circle me-1"></i>
                         اطلاعات هدف
-                    </h6>
+                    </h3>
                 </div>
-                <div class="card-body">
-                    <h3 class="mb-4">@Model.Title</h3>
-
+                <div class="block-content">
                     @if (!string.IsNullOrEmpty(Model.ProductName))
                     {
                         <div class="mb-4">
-                            <h6 class="text-muted mb-2">محصول/خدمت:</h6>
-                            <p class="fs-5 text-primary">
+                            <label class="form-label text-muted">محصول/خدمت</label>
+                            <p class="fs-5 fw-semibold text-primary mb-0">
                                 <i class="fa fa-box me-2"></i>
                                 @Model.ProductName
                             </p>
@@ -76,157 +125,139 @@
                     @if (!string.IsNullOrEmpty(Model.Description))
                     {
                         <div class="mb-4">
-                            <h6 class="text-muted mb-2">توضیحات:</h6>
-                            <p class="border-start border-3 border-primary ps-3" style="white-space: pre-wrap;">@Model.Description</p>
+                            <label class="form-label text-muted">توضیحات</label>
+                            <div class="p-3 bg-body-light rounded" style="white-space: pre-wrap;">@Model.Description</div>
                         </div>
                     }
 
-                    @if (Model.CurrentLeadStageStatusTitle != null)
-                    {
-                        <div class="mb-4">
-                            <h6 class="text-muted mb-2">وضعیت فعلی در قیف فروش:</h6>
-                            <span class="badge fs-6" style="background-color: @(Model.CurrentLeadStageStatusColor ?? "#6c757d")">
-                                @Model.CurrentLeadStageStatusTitle
-                            </span>
-                        </div>
-                    }
-
-                    <div class="row mb-4">
+                    <!-- ارزش‌ها -->
+                    <div class="row g-4">
                         @if (Model.EstimatedValue.HasValue)
                         {
                             <div class="col-md-6">
-                                <div class="card bg-warning bg-opacity-10 border-warning">
-                                    <div class="card-body">
-                                        <h6 class="text-muted mb-2">
-                                            <i class="fa fa-coins me-2"></i>
-                                            ارزش تخمینی
-                                        </h6>
-                                        <h4 class="mb-0">@Model.EstimatedValueFormatted ریال</h4>
-                                    </div>
+                                <div class="p-3 bg-warning-light rounded text-center">
+                                    <div class="fs-4 fw-bold text-warning">@Model.EstimatedValueFormatted</div>
+                                    <div class="text-muted small">ریال - ارزش تخمینی</div>
                                 </div>
                             </div>
                         }
-
                         @if (Model.IsConverted && Model.ActualValue.HasValue)
                         {
                             <div class="col-md-6">
-                                <div class="card bg-success bg-opacity-10 border-success">
-                                    <div class="card-body">
-                                        <h6 class="text-muted mb-2">
-                                            <i class="fa fa-money-bill-wave me-2"></i>
-                                            ارزش واقعی
-                                        </h6>
-                                        <h4 class="mb-0">@Model.ActualValueFormatted ریال</h4>
-                                        <small class="text-muted">
-                                            تاریخ تبدیل: @Model.ConversionDatePersian
-                                        </small>
-                                    </div>
+                                <div class="p-3 bg-success-light rounded text-center">
+                                    <div class="fs-4 fw-bold text-success">@Model.ActualValueFormatted</div>
+                                    <div class="text-muted small">ریال - ارزش واقعی</div>
                                 </div>
                             </div>
                         }
                     </div>
-
-                    @if (Model.IsConverted)
-                    {
-                        <div class="alert alert-success">
-                            <h6 class="alert-heading">
-                                <i class="fa fa-check-circle me-2"></i>
-                                این هدف به خرید تبدیل شده است
-                            </h6>
-                            <p class="mb-0">
-                                تاریخ تبدیل: @Model.ConversionDatePersian
-                            </p>
-                        </div>
-                    }
                 </div>
             </div>
 
             <!-- تعاملات مرتبط -->
-            @if (Model.InteractionsCount > 0)
-            {
-                <div class="card shadow-sm">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0">
-                            <i class="fa fa-handshake me-2"></i>
-                            تعاملات مرتبط
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <p class="mb-2">
-                            تعداد تعاملات مرتبط با این هدف: <strong class="text-primary">@Model.InteractionsCount</strong>
-                        </p>
-                        <a asp-controller="Interaction" asp-action="ByContact" asp-route-contactId="@Model.ContactId" class="btn btn-outline-primary btn-sm">
-                            <i class="fa fa-eye me-1"></i>
-                            مشاهده تعاملات
-                        </a>
-                    </div>
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-comments me-1"></i>
+                        تعاملات مرتبط
+                        <span class="badge bg-primary ms-1">@Model.InteractionsCount</span>
+                    </h3>
                 </div>
-            }
+                <div class="block-content">
+                    @if (Model.InteractionsCount > 0)
+                    {
+                        <p class="text-muted">
+                            این هدف با @Model.InteractionsCount تعامل مرتبط است.
+                        </p>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="fa fa-comments fa-2x mb-2"></i>
+                            <p class="mb-0">هنوز تعاملی برای این هدف ثبت نشده است</p>
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
 
-        <!-- اطلاعات جانبی -->
+        <!-- ستون کناری -->
         <div class="col-lg-4">
-            <!-- اطلاعات هدف -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0">
-                        <i class="fa fa-user me-2"></i>
-                        @Model.TargetType
-                    </h6>
+            <!-- مخاطب -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa @(Model.TargetType == "Contact" ? "fa-user" : "fa-building") me-1"></i>
+                        @(Model.TargetType == "Contact" ? "فرد" : "سازمان")
+                    </h3>
                 </div>
-                <div class="card-body">
-                    <p class="mb-2">
-                        <strong>نام:</strong> @Model.TargetName
-                    </p>
-                    <div class="mt-3">
-                        @if (Model.ContactId.HasValue)
-                        {
-                            <a asp-controller="Contact" asp-action="Details" asp-area="ContactArea" asp-route-id="@Model.ContactId" class="btn btn-outline-primary btn-sm w-100 mb-2">
-                                <i class="fa fa-eye me-1"></i>
-                                مشاهده پروفایل
-                            </a>
-                            <a asp-action="ByContact" asp-route-contactId="@Model.ContactId" class="btn btn-outline-secondary btn-sm w-100">
-                                <i class="fa fa-list me-1"></i>
-                                سایر اهداف
-                            </a>
-                        }
-                        else if (Model.OrganizationId.HasValue)
-                        {
-                            <a asp-controller="Organization" asp-action="Details" asp-area="ContactArea" asp-route-id="@Model.OrganizationId" class="btn btn-outline-primary btn-sm w-100 mb-2">
-                                <i class="fa fa-eye me-1"></i>
-                                مشاهده سازمان
-                            </a>
-                            <a asp-action="ByOrganization" asp-route-organizationId="@Model.OrganizationId" class="btn btn-outline-secondary btn-sm w-100">
-                                <i class="fa fa-list me-1"></i>
-                                سایر اهداف
-                            </a>
-                        }
+                <div class="block-content">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <i class="fa @(Model.TargetType == "Contact" ? "fa-user-circle" : "fa-building") fa-3x text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="mb-1">@Model.TargetName</h5>
+                            @if (Model.ContactId.HasValue)
+                            {
+                                <a asp-action="ByContact" asp-route-contactId="@Model.ContactId" class="btn btn-sm btn-alt-primary">
+                                    <i class="fa fa-list me-1"></i>
+                                    سایر اهداف
+                                </a>
+                            }
+                            else if (Model.OrganizationId.HasValue)
+                            {
+                                <a asp-action="ByOrganization" asp-route-organizationId="@Model.OrganizationId" class="btn btn-sm btn-alt-primary">
+                                    <i class="fa fa-list me-1"></i>
+                                    سایر اهداف
+                                </a>
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- اطلاعات ثبت -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0">
-                        <i class="fa fa-info-circle me-2"></i>
-                        اطلاعات ثبت
-                    </h6>
+            <!-- اطلاعات تکمیلی -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-clock me-1"></i>
+                        تاریخچه
+                    </h3>
                 </div>
-                <div class="card-body">
-                    <p class="mb-2 small">
-                        <i class="fa fa-user me-2 text-muted"></i>
-                        <strong>ایجاد کننده:</strong> @Model.CreatorName
-                    </p>
-                    <p class="mb-0 small">
-                        <i class="fa fa-calendar me-2 text-muted"></i>
-                        <strong>تاریخ ایجاد:</strong> @Model.CreatedDatePersian
-                    </p>
+                <div class="block-content block-content-full">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted">
+                                <i class="fa fa-plus-circle me-1"></i>
+                                تاریخ ایجاد
+                            </span>
+                            <strong>@Model.CreatedDatePersian</strong>
+                        </li>
+                        @if (Model.IsConverted && Model.ConversionDatePersian != null)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span class="text-muted">
+                                    <i class="fa fa-check-double me-1 text-success"></i>
+                                    تاریخ تبدیل
+                                </span>
+                                <strong class="text-success">@Model.ConversionDatePersian</strong>
+                            </li>
+                        }
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted">
+                                <i class="fa fa-user-edit me-1"></i>
+                                ایجادکننده
+                            </span>
+                            <strong>@(Model.CreatorName ?? "-")</strong>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<!-- END Page Content -->
 
 <!-- Modal تبدیل به خرید -->
 <div class="modal fade" id="conversionModal" tabindex="-1">
@@ -236,30 +267,29 @@
                 @Html.AntiForgeryToken()
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title">
-                        <i class="fa fa-check-circle me-2"></i>
+                        <i class="fa fa-check-double me-2"></i>
                         تبدیل به خرید
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>آیا این هدف به خرید تبدیل شده است؟</p>
-                    
+                    <p class="text-muted mb-4">
+                        آیا این هدف به خرید تبدیل شده است؟ با تأیید این عملیات، هدف به عنوان "تبدیل شده" ثبت خواهد شد.
+                    </p>
                     <div class="mb-3">
                         <label class="form-label">ارزش واقعی معامله (ریال)</label>
-                        <input type="number" name="actualValue" class="form-control" placeholder="@Model.EstimatedValue" min="0" />
-                        <small class="text-muted">در صورت خالی گذاشتن، ارزش تخمینی ثبت می‌شود</small>
-                    </div>
-
-                    <div class="alert alert-info small mb-0">
-                        <i class="fa fa-info-circle me-2"></i>
-                        پس از تبدیل، این هدف به عنوان یک فروش موفق ثبت می‌شود
+                        <input type="number" name="actualValue" class="form-control" 
+                               value="@Model.EstimatedValue" min="0" placeholder="ارزش واقعی معامله" />
+                        <small class="form-text text-muted">
+                            در صورت تفاوت با ارزش تخمینی، مقدار واقعی را وارد کنید
+                        </small>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">انصراف</button>
                     <button type="submit" class="btn btn-success">
                         <i class="fa fa-check me-1"></i>
-                        تایید تبدیل
+                        تأیید تبدیل
                     </button>
                 </div>
             </form>

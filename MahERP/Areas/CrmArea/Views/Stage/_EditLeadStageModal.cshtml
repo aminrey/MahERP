@@ -1,0 +1,62 @@
+﻿@model MahERP.DataModelLayer.Entities.Crm.LeadStageStatus
+@{
+    var themeClass = ViewBag.ThemeClass ?? "bg-primary";
+    var viewTitle = ViewBag.ViewTitle ?? "ویرایش مرحله قیف فروش";
+}
+
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form asp-action="UpdateLeadStage" method="post" data-ajax="true" data-ajax-method="POST">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            
+            <div class="modal-header @themeClass">
+                <h5 class="modal-title text-white">
+                    <i class="fa fa-edit me-1"></i>
+                    @viewTitle
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">
+                        عنوان <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" name="title" class="form-control" value="@Model.Title" required autofocus />
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">توضیحات</label>
+                    <textarea name="description" class="form-control" rows="2">@Model.Description</textarea>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">رنگ</label>
+                            <input type="color" name="color" class="form-control form-control-color w-100" value="@Model.ColorCode" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">ترتیب نمایش</label>
+                            <input type="number" name="displayOrder" class="form-control" value="@Model.DisplayOrder" min="1" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" class="btn btn-primary" data-save="modal-ajax-save">
+                    <i class="fa fa-check me-1"></i>
+                    ذخیره تغییرات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

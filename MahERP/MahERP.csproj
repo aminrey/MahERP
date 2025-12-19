@@ -15,12 +15,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-	  <Content Remove="Areas\CrmArea\Views\CRM\_DeleteCRMInteraction.cshtml" />
 	  <Content Remove="wwwroot\Source\be_comp_calendar.html" />
   </ItemGroup>
 
   <ItemGroup>
-	  <None Include="Areas\CrmArea\Views\CRM\_DeleteCRMInteraction.cshtml" />
 	  <None Include="wwwroot\Source\be_comp_calendar.html" />
   </ItemGroup>
 
@@ -55,11 +53,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Areas\CrmArea\Controllers\CRMControllers\" />
     <Folder Include="Areas\CrmArea\Controllers\DashboardControllers\" />
-    <Folder Include="Areas\CrmArea\Controllers\LeadControllers\" />
-    <Folder Include="Areas\CrmArea\Controllers\PipelineControllers\" />
     <Folder Include="MappingProfiles\" />
+    <Folder Include="wwwroot\assets\js\NewFolder\" />
   </ItemGroup>
 
 </Project>

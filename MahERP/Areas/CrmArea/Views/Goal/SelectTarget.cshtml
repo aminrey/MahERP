@@ -1,0 +1,253 @@
+﻿@using MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.AcControl
+@{
+    ViewData["Title"] = "تعریف هدف جدید";
+    var userBranches = ViewBag.UserBranches as List<BranchViewModel> ?? new List<BranchViewModel>();
+    var hasSingleBranch = ViewBag.HasSingleBranch as bool? ?? false;
+    var defaultBranchId = ViewBag.DefaultBranchId as int?;
+    var defaultBranchName = ViewBag.DefaultBranchName as string;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-bullseye text-primary me-2"></i>
+                تعریف هدف فروش جدید
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">CRM</li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">اهداف</a>
+                    </li>
+                    <li class="breadcrumb-item active">هدف جدید</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content content-full">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+
+            <!-- انتخاب شعبه -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-code-branch me-1"></i>
+                        انتخاب شعبه
+                    </h3>
+                </div>
+                <div class="block-content">
+                    @if (hasSingleBranch && defaultBranchId.HasValue)
+                    {
+                        <!-- کاربر فقط در یک شعبه است -->
+                        <div class="alert alert-info d-flex align-items-center mb-0">
+                            <i class="fa fa-info-circle fa-2x me-3"></i>
+                            <div>
+                                <strong>شعبه شما:</strong> @defaultBranchName
+                                <br />
+                                <small class="text-muted">شما فقط در یک شعبه عضو هستید</small>
+                            </div>
+                        </div>
+                        <input type="hidden" id="selectedBranchId" value="@defaultBranchId" />
+                    }
+                    else if (userBranches.Any())
+                    {
+                        <!-- کاربر در چند شعبه است -->
+                        <div class="mb-4">
+                            <label class="form-label" for="branchSelector">
+                                شعبه مورد نظر را انتخاب کنید <span class="text-danger">*</span>
+                            </label>
+                            <select id="branchSelector" class="form-select js-select2" data-placeholder="انتخاب شعبه...">
+                                <option value="">انتخاب شعبه...</option>
+                                @foreach (var branch in userBranches)
+                                {
+                                    <option value="@branch.Id">
+                                        @branch.Name
+                                        @if (branch.IsMainBranch)
+                                        {
+                                            @(" (شعبه اصلی)")
+                                        }
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <input type="hidden" id="selectedBranchId" value="" />
+                    }
+                    else
+                    {
+                        <!-- کاربر در هیچ شعبه‌ای نیست -->
+                        <div class="alert alert-warning d-flex align-items-center mb-0">
+                            <i class="fa fa-exclamation-triangle fa-2x me-3"></i>
+                            <div>
+                                <strong>خطا:</strong> شما در هیچ شعبه‌ای تعریف نشده‌اید.
+                                <br />
+                                <small>لطفاً با مدیر سیستم تماس بگیرید.</small>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- انتخاب فرد یا سازمان -->
+            <div id="targetSelectionSection" style="@(hasSingleBranch ? "" : "display: none;")">
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-user-tag me-1"></i>
+                            انتخاب مخاطب
+                        </h3>
+                        <div class="block-options">
+                            <button type="button" 
+                                    class="btn btn-sm btn-success" 
+                                    onclick="openQuickAddModalForGoal()">
+                                <i class="fa fa-plus me-1"></i>
+                                افزودن سریع
+                            </button>
+                        </div>
+                    </div>
+                    <div class="block-content">
+                        <p class="text-muted mb-4">
+                            <i class="fa fa-info-circle me-1"></i>
+                            لطفاً فرد یا سازمان مورد نظر برای تعریف هدف فروش را انتخاب کنید
+                        </p>
+
+                        <div class="row g-4">
+                            <!-- انتخاب فرد -->
+                            <div class="col-md-6">
+                                <a href="javascript:void(0)" onclick="openContactSelectionModal()" class="block block-rounded block-link-shadow text-center h-100">
+                                    <div class="block-content block-content-full">
+                                        <div class="py-4">
+                                            <i class="fa fa-user fa-4x text-primary"></i>
+                                        </div>
+                                        <h4 class="fw-semibold mb-2">انتخاب فرد</h4>
+                                        <p class="text-muted mb-0">
+                                            هدف فروش را برای یک فرد خاص تعریف کنید
+                                        </p>
+                                    </div>
+                                    <div class="block-content block-content-full block-content-sm bg-body-light">
+                                        <span class="text-primary">
+                                            <i class="fa fa-search me-1"></i>
+                                            انتخاب فرد
+                                        </span>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <!-- انتخاب سازمان -->
+                            <div class="col-md-6">
+                                <a href="javascript:void(0)" onclick="openOrganizationSelectionModal()" class="block block-rounded block-link-shadow text-center h-100">
+                                    <div class="block-content block-content-full">
+                                        <div class="py-4">
+                                            <i class="fa fa-building fa-4x text-success"></i>
+                                        </div>
+                                        <h4 class="fw-semibold mb-2">انتخاب سازمان</h4>
+                                        <p class="text-muted mb-0">
+                                            هدف فروش را برای یک سازمان تعریف کنید
+                                        </p>
+                                    </div>
+                                    <div class="block-content block-content-full block-content-sm bg-body-light">
+                                        <span class="text-success">
+                                            <i class="fa fa-search me-1"></i>
+                                            انتخاب سازمان
+                                        </span>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-- END Page Content -->
+
+@section Scripts {
+    <!-- ⭐ QuickAdd Helper Script -->
+    <script src="~/js/crm/quickadd-helper.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // راه‌اندازی Select2
+            if (typeof $.fn.select2 !== 'undefined') {
+                $('#branchSelector').select2({
+                    width: '100%',
+                    allowClear: true
+                });
+            }
+
+            // رویداد تغییر شعبه
+            $('#branchSelector').on('change', function() {
+                var branchId = $(this).val();
+                $('#selectedBranchId').val(branchId);
+                
+                if (branchId) {
+                    $('#targetSelectionSection').slideDown();
+                } else {
+                    $('#targetSelectionSection').slideUp();
+                }
+            });
+        });
+
+        function getSelectedBranchId() {
+            return $('#selectedBranchId').val();
+        }
+
+        function openContactSelectionModal() {
+            var branchId = getSelectedBranchId();
+            if (!branchId) {
+                NotificationHelper.warning('لطفاً ابتدا شعبه را انتخاب کنید');
+                return;
+            }
+
+            createAndShowModal({
+                url: '@Url.Action("SelectContactModal", "Goal", new { area = "CrmArea" })' + '?branchId=' + branchId,
+                modalId: 'selectContactModal'
+            });
+        }
+
+        function openOrganizationSelectionModal() {
+            var branchId = getSelectedBranchId();
+            if (!branchId) {
+                NotificationHelper.warning('لطفاً ابتدا شعبه را انتخاب کنید');
+                return;
+            }
+
+            createAndShowModal({
+                url: '@Url.Action("SelectOrganizationModal", "Goal", new { area = "CrmArea" })' + '?branchId=' + branchId,
+                modalId: 'selectOrganizationModal'
+            });
+        }
+
+        // ⭐ باز کردن QuickAdd برای افزودن سریع Contact/Organization
+        function openQuickAddModalForGoal() {
+            var branchId = getSelectedBranchId();
+            if (!branchId) {
+                NotificationHelper.warning('لطفاً ابتدا شعبه را انتخاب کنید');
+                return;
+            }
+
+            openQuickAddModal(branchId, null);
+        }
+
+        // ⭐ Override کردن callback بعد از QuickAdd
+        window.onQuickAddComplete = function(type, response) {
+            if (type === 'contact') {
+                // هدایت به صفحه Create با Contact جدید
+                window.location.href = '@Url.Action("Create", "Goal", new { area = "CrmArea" })' + 
+                                      '?contactId=' + response.contactId;
+            } else if (type === 'organization') {
+                // هدایت به صفحه Create با Organization جدید
+                window.location.href = '@Url.Action("Create", "Goal", new { area = "CrmArea" })' + 
+                                      '?organizationId=' + response.organizationId;
+            }
+        };
+    </script>
+}

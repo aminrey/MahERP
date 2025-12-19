@@ -1,0 +1,76 @@
+﻿@model List<MahERP.DataModelLayer.Entities.Contacts.Contact>
+@{
+    var branchId = ViewBag.BranchId as int?;
+    var branchName = ViewBag.BranchName as string;
+}
+
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">
+                <i class="fa fa-user me-2"></i>
+                انتخاب فرد
+                @if (!string.IsNullOrEmpty(branchName))
+                {
+                    <small class="opacity-75">- شعبه @branchName</small>
+                }
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+            <div class="mb-3">
+                <input type="text" id="contactSearch" class="form-control" placeholder="جستجو در افراد..." onkeyup="filterContacts()" />
+            </div>
+
+            <div id="contactList" style="max-height: 400px; overflow-y: auto;">
+                @if (Model != null && Model.Any())
+                {
+                    <div class="list-group">
+                        @foreach (var contact in Model)
+                        {
+                            <a href="@Url.Action("Create", "Goal", new { area = "CrmArea", contactId = contact.Id })" 
+                               class="list-group-item list-group-item-action contact-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fa fa-user text-primary me-2"></i>
+                                        <strong>@contact.FullName</strong>
+                                        @if (!string.IsNullOrEmpty(contact.PrimaryEmail))
+                                        {
+                                            <br><small class="text-muted">@contact.PrimaryEmail</small>
+                                        }
+                                    </div>
+                                    <i class="fa fa-chevron-left"></i>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        هیچ فردی در این شعبه یافت نشد
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="fa fa-times me-1"></i>
+                بستن
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterContacts() {
+        const searchTerm = $('#contactSearch').val().toLowerCase();
+        $('.contact-item').each(function() {
+            const text = $(this).text().toLowerCase();
+            $(this).toggle(text.includes(searchTerm));
+        });
+    }
+</script>

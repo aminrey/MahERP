@@ -1,4 +1,5 @@
-﻿using MahERP.DataModelLayer.Enums;
+﻿using MahERP.DataModelLayer.Entities.Crm;
+using MahERP.DataModelLayer.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -204,6 +205,8 @@ namespace MahERP.DataModelLayer.ViewModels.CrmViewModels
         public string? SearchTerm { get; set; }
         public string? FromDatePersian { get; set; }
         public string? ToDatePersian { get; set; }
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
         public string? Status { get; set; }
     }
 
@@ -215,6 +218,7 @@ namespace MahERP.DataModelLayer.ViewModels.CrmViewModels
         public int TotalGoals { get; set; }
         public int ActiveGoals { get; set; }
         public int ConvertedGoals { get; set; }
+        public int InactiveGoals { get; set; }
         public decimal ConversionRate { get; set; }
         public decimal TotalEstimatedValue { get; set; }
         public decimal TotalActualValue { get; set; }
@@ -226,6 +230,7 @@ namespace MahERP.DataModelLayer.ViewModels.CrmViewModels
     public class GoalListViewModel
     {
         public List<GoalViewModel> Goals { get; set; } = new();
+        public List<LeadStageStatus> LeadStageStatuses { get; set; } = new();
         public int TotalCount { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 20;
@@ -329,10 +334,19 @@ namespace MahERP.DataModelLayer.ViewModels.CrmViewModels
     /// </summary>
     public class InteractionCreateViewModel
     {
+        // ========== Step 1: Branch Selection =========
+        [Display(Name = "شعبه")]
+        public int? BranchId { get; set; }
+
+        // ========== Step 2: Contact Selection =========
         [Required(ErrorMessage = "انتخاب فرد الزامی است")]
         [Display(Name = "فرد")]
         public int ContactId { get; set; }
 
+        [Display(Name = "سازمان")]
+        public int? OrganizationId { get; set; }
+
+        // ========== Step 3: Interaction Details =========
         [Required(ErrorMessage = "نوع تعامل الزامی است")]
         [Display(Name = "نوع تعامل")]
         public int InteractionTypeId { get; set; }
@@ -397,7 +411,7 @@ namespace MahERP.DataModelLayer.ViewModels.CrmViewModels
         [Display(Name = "معرفی‌کننده")]
         public int? ReferrerContactId { get; set; }
 
-        // ========== Form Data ==========
+        // ========== Form Data =========
         public List<InteractionTypeViewModel> InteractionTypes { get; set; } = new();
         public List<PostPurchaseStageViewModel> PostPurchaseStages { get; set; } = new();
         public List<GoalViewModel> AvailableGoals { get; set; } = new();
@@ -496,6 +510,278 @@ namespace MahERP.DataModelLayer.ViewModels.CrmViewModels
         [MaxLength(1000)]
         [Display(Name = "یادداشت")]
         public string? Notes { get; set; }
+    }
+
+    #endregion
+
+    #region Stakeholder Interaction View ViewModels
+
+    /// <summary>
+    /// ViewModel برای صفحه اصلی مشاهده تعاملات یک Stakeholder
+    /// </summary>
+    public class StakeholderInteractionPageViewModel
+    {
+        // انتخاب شعبه و Stakeholder
+        public int? BranchId { get; set; }
+        public string? BranchName { get; set; }
+        
+        // نوع Stakeholder
+        public StakeholderType StakeholderType { get; set; }
+        
+        // اطلاعات Contact (اگر انتخاب شده)
+        public int? ContactId { get; set; }
+        public string? ContactName { get; set; }
+        public ContactType? ContactType { get; set; }
+        public string? ContactTypeName { get; set; }
+        public string? ContactPhone { get; set; }
+        public string? ContactEmail { get; set; }
+        
+        // اطلاعات Organization (اگر انتخاب شده)
+        public int? OrganizationId { get; set; }
+        public string? OrganizationName { get; set; }
+        public string? OrganizationPhone { get; set; }
+        public string? OrganizationAddress { get; set; }
+        
+        // آمار خلاصه
+        public int TotalInteractionsCount { get; set; }
+        public int ActiveGoalsCount { get; set; }
+        public string? LastInteractionDatePersian { get; set; }
+        
+        // اهداف مرتبط (برای نمایش Tab ها)
+        public List<GoalSummaryViewModel> Goals { get; set; } = new();
+        
+        // آیا هدفی وجود دارد؟
+        public bool HasGoals => Goals.Any();
+    }
+
+    /// <summary>
+    /// Enum برای نوع Stakeholder
+    /// </summary>
+    public enum StakeholderType
+    {
+        Contact = 1,
+        Organization = 2
+    }
+
+    /// <summary>
+    /// ViewModel خلاصه هدف (برای نمایش در Tab)
+    /// </summary>
+    public class GoalSummaryViewModel
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? ProductName { get; set; }
+        public string? LeadStageTitle { get; set; }
+        public string? LeadStageColor { get; set; }
+        public bool IsConverted { get; set; }
+        public bool IsActive { get; set; }
+        public int InteractionsCount { get; set; }
+    }
+
+    /// <summary>
+    /// ViewModel برای لیست تعاملات یک هدف خاص (Partial)
+    /// </summary>
+    public class GoalInteractionsViewModel
+    {
+        public int GoalId { get; set; }
+        public string GoalTitle { get; set; } = string.Empty;
+        public List<InteractionViewModel> Interactions { get; set; } = new();
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+        
+        // فیلترها
+        public InteractionFilterViewModel? Filters { get; set; }
+    }
+
+    /// <summary>
+    /// ViewModel برای لیست تعاملات بدون هدف (Partial)
+    /// </summary>
+    public class StakeholderInteractionsViewModel
+    {
+        public int? ContactId { get; set; }
+        public int? OrganizationId { get; set; }
+        public List<InteractionViewModel> Interactions { get; set; } = new();
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+        
+        // فیلترها
+        public InteractionFilterViewModel? Filters { get; set; }
+    }
+
+    /// <summary>
+    /// ViewModel برای 10 تعامل اخیر سیستم (Sidebar)
+    /// </summary>
+    public class RecentInteractionsViewModel
+    {
+        public List<RecentInteractionItemViewModel> Interactions { get; set; } = new();
+    }
+
+    /// <summary>
+    /// ViewModel برای یک آیتم تعامل اخیر
+    /// </summary>
+    public class RecentInteractionItemViewModel
+    {
+        public int Id { get; set; }
+        public string Subject { get; set; } = string.Empty;
+        public string ContactName { get; set; } = string.Empty;
+        public string InteractionTypeName { get; set; } = string.Empty;
+        public string? InteractionTypeColor { get; set; }
+        public string? InteractionTypeIcon { get; set; }
+        public string DatePersian { get; set; } = string.Empty;
+        public string TimeAgo { get; set; } = string.Empty; // مثال: "2 ساعت پیش"
+    }
+
+    #endregion
+
+    #region Stakeholder Goal View ViewModels
+
+    /// <summary>
+    /// ViewModel برای صفحه اصلی مشاهده اهداف یک Stakeholder
+    /// </summary>
+    public class StakeholderGoalsPageViewModel
+    {
+        // انتخاب شعبه و Stakeholder
+        public int? BranchId { get; set; }
+        public string? BranchName { get; set; }
+        
+        // نوع Stakeholder
+        public StakeholderType StakeholderType { get; set; }
+        
+        // اطلاعات Contact (اگر انتخاب شده)
+        public int? ContactId { get; set; }
+        public string? ContactName { get; set; }
+        public ContactType? ContactType { get; set; }
+        public string? ContactTypeName { get; set; }
+        
+        // اطلاعات Organization (اگر انتخاب شده)
+        public int? OrganizationId { get; set; }
+        public string? OrganizationName { get; set; }
+        
+        // آمار خلاصه
+        public int TotalGoals { get; set; }
+        public int ActiveGoals { get; set; }
+        public int ConvertedGoals { get; set; }
+        
+        // لیست اهداف
+        public List<GoalViewModel> Goals { get; set; } = new();
+        
+        // آیا هدفی وجود دارد؟
+        public bool HasGoals => Goals.Any();
+    }
+
+    /// <summary>
+    /// ViewModel برای 10 هدف اخیر سیستم (Sidebar)
+    /// </summary>
+    public class RecentGoalsViewModel
+    {
+        public List<RecentGoalItemViewModel> Goals { get; set; } = new();
+    }
+
+    /// <summary>
+    /// ViewModel برای یک آیتم هدف اخیر
+    /// </summary>
+    public class RecentGoalItemViewModel
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? ProductName { get; set; }
+        public string TargetName { get; set; } = string.Empty;
+        public string TargetType { get; set; } = string.Empty; // "Contact" or "Organization"
+        public string? CurrentLeadStageTitle { get; set; }
+        public string? CurrentLeadStageColor { get; set; }
+        public bool IsConverted { get; set; }
+        public string LastChangeDatePersian { get; set; } = string.Empty;
+    }
+
+    #endregion
+
+    #region QuickAdd ViewModels
+
+    /// <summary>
+    /// ViewModel برای افزودن سریع Contact
+    /// </summary>
+    public class QuickAddContactViewModel
+    {
+        [Required(ErrorMessage = "نام خانوادگی الزامی است")]
+        [Display(Name = "نام خانوادگی")]
+        [MaxLength(100)]
+        public string LastName { get; set; } = string.Empty;
+
+        [Display(Name = "نام")]
+        [MaxLength(100)]
+        public string? FirstName { get; set; }
+
+        [Display(Name = "شماره تماس")]
+        [MaxLength(20)]
+        public string? PhoneNumber { get; set; }
+
+        [Display(Name = "ایمیل")]
+        [EmailAddress(ErrorMessage = "فرمت ایمیل صحیح نیست")]
+        [MaxLength(200)]
+        public string? Email { get; set; }
+
+        [Required(ErrorMessage = "انتخاب شعبه الزامی است")]
+        [Display(Name = "شعبه")]
+        public int BranchId { get; set; }
+
+        // اگر قرار باشه به سازمان لینک بشه
+        public int? OrganizationId { get; set; }
+    }
+
+    /// <summary>
+    /// ViewModel برای افزودن سریع Organization
+    /// </summary>
+    public class QuickAddOrganizationViewModel
+    {
+        [Required(ErrorMessage = "نام سازمان الزامی است")]
+        [Display(Name = "نام سازمان")]
+        [MaxLength(200)]
+        public string Name { get; set; } = string.Empty;
+
+        [Display(Name = "نام برند")]
+        [MaxLength(200)]
+        public string? Brand { get; set; }
+
+        [Display(Name = "شماره تماس")]
+        [MaxLength(20)]
+        public string? PhoneNumber { get; set; }
+
+        [Display(Name = "ایمیل")]
+        [EmailAddress(ErrorMessage = "فرمت ایمیل صحیح نیست")]
+        [MaxLength(200)]
+        public string? Email { get; set; }
+
+        [Required(ErrorMessage = "انتخاب شعبه الزامی است")]
+        [Display(Name = "شعبه")]
+        public int BranchId { get; set; }
+
+        [Display(Name = "نوع سازمان")]
+        public byte OrganizationType { get; set; } = 0; // پیش‌فرض: شرکت
+    }
+
+    /// <summary>
+    /// Response بعد از ساخت موفق QuickAdd
+    /// </summary>
+    public class QuickAddResponseViewModel
+    {
+        public string Status { get; set; } = "success";
+        public string Message { get; set; } = string.Empty;
+        
+        // برای Contact
+        public int? ContactId { get; set; }
+        public string? ContactName { get; set; }
+        
+        // برای Organization
+        public int? OrganizationId { get; set; }
+        public string? OrganizationName { get; set; }
+        
+        // برای Select2
+        public string? SelectValue { get; set; } // id که باید انتخاب بشه
+        public string? SelectText { get; set; }  // متن نمایشی
     }
 
     #endregion

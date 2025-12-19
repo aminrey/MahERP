@@ -1,0 +1,74 @@
+﻿@{
+    var branchId = ViewBag.BranchId as int? ?? 0;
+    var organizationId = ViewBag.OrganizationId as int?;
+    var hasOrganization = ViewBag.HasOrganization as bool? ?? false;
+}
+
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <div class="modal-header bg-primary">
+            <h5 class="modal-title text-white">
+                <i class="fa fa-plus-circle me-2"></i>
+                افزودن سریع
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        
+        <div class="modal-body">
+            @if (hasOrganization)
+            {
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-2"></i>
+                    شما یک سازمان انتخاب کرده‌اید. فرد جدید به این سازمان متصل خواهد شد.
+                </div>
+            }
+            else
+            {
+                <p class="text-muted mb-3">چه چیزی می‌خواهید اضافه کنید؟</p>
+            }
+
+            <div class="row g-3">
+                <!-- افزودن فرد -->
+                <div class="col-md-6">
+                    <button type="button" 
+                            class="btn btn-lg btn-outline-primary w-100 py-4" 
+                            onclick="openQuickAddContact(@branchId, @(organizationId?.ToString() ?? "null"))">
+                        <i class="fa fa-user fa-3x mb-3 d-block"></i>
+                        <span class="fw-bold">فرد جدید</span>
+                        <small class="d-block text-muted mt-2">افزودن شخص</small>
+                    </button>
+                </div>
+
+                @if (!hasOrganization)
+                {
+                    <!-- افزودن سازمان -->
+                    <div class="col-md-6">
+                        <button type="button" 
+                                class="btn btn-lg btn-outline-success w-100 py-4" 
+                                onclick="openQuickAddOrganization(@branchId)">
+                            <i class="fa fa-building fa-3x mb-3 d-block"></i>
+                            <span class="fw-bold">سازمان جدید</span>
+                            <small class="d-block text-muted mt-2">افزودن شرکت/موسسه</small>
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                <i class="fa fa-times me-1"></i>
+                انصراف
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-outline-primary:hover,
+    .btn-outline-success:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+</style>

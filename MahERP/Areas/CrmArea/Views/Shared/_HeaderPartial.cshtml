@@ -170,19 +170,19 @@
         <!-- Right Section -->
         <div class="space-x-1">
             <!-- ============== ⚡ QUICK ADD BUTTON (CRM SPECIFIC) ============== -->
-            @if (currentArea == "CrmArea" && Html.CanAccessAny("CONTACT", "CONTACT.CREATE"))
+            @if (currentArea == "CrmArea" && Html.CanAccessAny("CRM", "CRM.INTERACTION.CREATE"))
             {
-                <a asp-area="CrmArea" asp-controller="Contact" asp-action="Create"
+                <a asp-area="CrmArea" asp-controller="Interaction" asp-action="Create"
                    class="btn btn-success btn-quick-add d-none d-md-inline-block"
-                   title="ایجاد مخاطب جدید">
+                   title="ثبت تعامل جدید">
                     <i class="fa fa-plus-circle me-1"></i>
-                    <span class="d-none d-lg-inline-block">مخاطب جدید</span>
+                    <span class="d-none d-lg-inline-block">تعامل جدید</span>
                 </a>
 
                 <!-- Mobile Version -->
-                <a asp-area="CrmArea" asp-controller="Contact" asp-action="Create"
+                <a asp-area="CrmArea" asp-controller="Interaction" asp-action="Create"
                    class="btn btn-success btn-quick-add-mobile d-md-none"
-                   title="ایجاد مخاطب جدید">
+                   title="ثبت تعامل جدید">
                     <i class="fa fa-plus"></i>
                 </a>
             }

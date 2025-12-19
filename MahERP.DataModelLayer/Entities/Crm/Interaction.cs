@@ -27,6 +27,16 @@ namespace MahERP.DataModelLayer.Entities.Crm
         [ForeignKey(nameof(ContactId))]
         public virtual Contact Contact { get; set; } = null!;
 
+        // ========== سازمان مرتبط (اختیاری) ==========
+
+        /// <summary>
+        /// شناسه سازمان (اگر تعامل از طریق سازمان باشد)
+        /// </summary>
+        public int? OrganizationId { get; set; }
+
+        [ForeignKey(nameof(OrganizationId))]
+        public virtual Organization? Organization { get; set; }
+
         // ========== نوع تعامل ==========
 
         /// <summary>

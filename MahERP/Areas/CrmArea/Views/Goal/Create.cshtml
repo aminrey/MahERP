@@ -1,102 +1,174 @@
 ﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.GoalCreateViewModel
 @{
     ViewData["Title"] = "تعریف هدف جدید";
-    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
+    var targetName = ViewBag.TargetName as string;
+    var targetType = ViewBag.TargetType as string;
 }
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <nav aria-label="breadcrumb">
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-plus-circle text-primary me-2"></i>
+                تعریف هدف فروش جدید
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
                 <ol class="breadcrumb">
+                    <li class="breadcrumb-item">CRM</li>
                     <li class="breadcrumb-item">
                         <a asp-action="Index">اهداف</a>
                     </li>
-                    <li class="breadcrumb-item active">تعریف هدف جدید</li>
+                    <li class="breadcrumb-item active">هدف جدید</li>
                 </ol>
             </nav>
-            <h4 class="mb-0">
-                <i class="fa fa-plus-circle me-2"></i>
-                تعریف هدف فروش جدید
-                @if (ViewBag.TargetName != null)
-                {
-                    <span class="text-muted"> - @ViewBag.TargetName</span>
-                }
-            </h4>
         </div>
     </div>
+</div>
+<!-- END Hero -->
 
-    <div class="row">
-        <div class="col-lg-8 mx-auto">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form asp-action="Create" method="post">
-                        @Html.AntiForgeryToken()
+<!-- Page Content -->
+<div class="content content-full content-boxed">
+    <form asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+
+        <!-- اطلاعات مخاطب -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa @(targetType == "Contact" ? "fa-user" : "fa-building") me-1"></i>
+                    @(targetType == "Contact" ? "فرد" : "سازمان") انتخاب شده
+                </h3>
+            </div>
+            <div class="block-content block-content-full bg-body-light">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <i class="fa @(targetType == "Contact" ? "fa-user-circle" : "fa-building") fa-3x text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h4 class="mb-1">@targetName</h4>
+                        <small class="text-muted">
+                            @(targetType == "Contact" ? "فرد" : "سازمان")
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- اطلاعات هدف -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-bullseye me-1"></i>
+                    اطلاعات هدف
+                </h3>
+            </div>
+            <div class="block-content">
+                <div class="row justify-content-center">
+                    <div class="col-md-10 col-lg-8">
 
                         <!-- عنوان -->
-                        <div class="mb-3">
-                            <label asp-for="Title" class="form-label">عنوان هدف <span class="text-danger">*</span></label>
+                        <div class="mb-4">
+                            <label class="form-label" for="Title">
+                                عنوان هدف <span class="text-danger">*</span>
+                            </label>
                             <input asp-for="Title" class="form-control" placeholder="مثال: فروش محصول X" required />
                             <span asp-validation-for="Title" class="text-danger"></span>
                         </div>
 
                         <!-- توضیحات -->
-                        <div class="mb-3">
-                            <label asp-for="Description" class="form-label">توضیحات</label>
-                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="جزئیات بیشتر در مورد این هدف..."></textarea>
+                        <div class="mb-4">
+                            <label class="form-label" for="Description">توضیحات</label>
+                            <textarea asp-for="Description" class="form-control" rows="4" placeholder="جزئیات بیشتر در مورد این هدف..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
                         </div>
 
-                        <!-- نام محصول -->
-                        <div class="mb-3">
-                            <label asp-for="ProductName" class="form-label">نام محصول/خدمت</label>
-                            <input asp-for="ProductName" class="form-control" placeholder="مثال: بسته نرم‌افزاری پیشرفته" />
-                            <small class="text-muted">محصول یا خدمتی که قرار است فروخته شود</small>
-                        </div>
-
-                        <!-- ارزش تخمینی -->
-                        <div class="mb-3">
-                            <label asp-for="EstimatedValue" class="form-label">ارزش تخمینی (ریال)</label>
-                            <input asp-for="EstimatedValue" type="number" class="form-control" placeholder="0" min="0" />
-                            <small class="text-muted">ارزش تخمینی این معامله</small>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- نام محصول -->
+                                <div class="mb-4">
+                                    <label class="form-label" for="ProductName">نام محصول/خدمت</label>
+                                    <input asp-for="ProductName" class="form-control" placeholder="مثال: بسته نرم‌افزاری پیشرفته" />
+                                    <small class="form-text text-muted">محصول یا خدمتی که قرار است فروخته شود</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- ارزش تخمینی -->
+                                <div class="mb-4">
+                                    <label class="form-label" for="EstimatedValue">ارزش تخمینی (تومان)</label>
+                                    <input type="text" 
+                                           id="estimatedValueInput" 
+                                           class="form-control money-input" 
+                                           placeholder="0" 
+                                           data-raw-value="@(Model.EstimatedValue ?? 0)" 
+                                           value="@((Model.EstimatedValue ?? 0).ToString("N0"))" />
+                                    <input type="hidden" asp-for="EstimatedValue" id="estimatedValueHidden" value="@(Model.EstimatedValue ?? 0)" />
+                                    <small class="form-text text-muted">ارزش تخمینی این معامله به تومان</small>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Hidden Fields -->
                         <input type="hidden" asp-for="ContactId" />
                         <input type="hidden" asp-for="OrganizationId" />
 
-                        <hr class="my-4" />
-
-                        <div class="d-flex justify-content-between">
-                            <a asp-action="ByContact" asp-route-contactId="@Model.ContactId" class="btn btn-outline-secondary">
-                                <i class="fa fa-arrow-right me-1"></i>
-                                بازگشت
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fa fa-save me-1"></i>
-                                ذخیره هدف
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
+            <div class="block-content block-content-full block-content-sm bg-body-light text-end">
+                @if (Model.ContactId.HasValue)
+                {
+                    <a asp-action="ByContact" asp-route-contactId="@Model.ContactId" class="btn btn-alt-secondary">
+                        <i class="fa fa-arrow-right me-1"></i>
+                        انصراف
+                    </a>
+                }
+                else if (Model.OrganizationId.HasValue)
+                {
+                    <a asp-action="ByOrganization" asp-route-organizationId="@Model.OrganizationId" class="btn btn-alt-secondary">
+                        <i class="fa fa-arrow-right me-1"></i>
+                        انصراف
+                    </a>
+                }
+                else
+                {
+                    <a asp-action="Index" class="btn btn-alt-secondary">
+                        <i class="fa fa-arrow-right me-1"></i>
+                        انصراف
+                    </a>
+                }
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-check me-1"></i>
+                    ذخیره هدف
+                </button>
+            </div>
+        </div>
+    </form>
 
-            <!-- راهنما -->
-            <div class="card shadow-sm mt-4">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0">
-                        <i class="fa fa-lightbulb me-2"></i>
-                        راهنما
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <p class="mb-2"><strong>هدف چیست؟</strong></p>
-                    <p class="small mb-3">
+    <!-- راهنما -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-lightbulb me-1"></i>
+                راهنما
+            </h3>
+            <div class="block-options">
+                <button type="button" class="btn-block-option" data-toggle="block-option" data-action="content_toggle"></button>
+            </div>
+        </div>
+        <div class="block-content">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="fw-semibold mb-2">هدف چیست؟</p>
+                    <p class="text-muted small">
                         هدف یک فرصت فروش بالقوه است که برای یک لید یا مشتری تعریف می‌شود. 
                         هر تعامل می‌تواند به یک یا چند هدف مرتبط باشد و پیشرفت هر هدف در قیف فروش پیگیری می‌شود.
                     </p>
-                    <p class="mb-2"><strong>نکات مهم:</strong></p>
-                    <ul class="small mb-0">
-                        <li>یک فرد می‌تواند چندین هدف داشته باشد</li>
+                </div>
+                <div class="col-md-6">
+                    <p class="fw-semibold mb-2">نکات مهم:</p>
+                    <ul class="text-muted small mb-0">
+                        <li>یک فرد/سازمان می‌تواند چندین هدف داشته باشد</li>
                         <li>هر هدف می‌تواند مرحله‌های مختلف قیف فروش را طی کند</li>
                         <li>در زمان تبدیل به خرید، ارزش واقعی معامله ثبت می‌شود</li>
                     </ul>
@@ -105,19 +177,40 @@
         </div>
     </div>
 </div>
+<!-- END Page Content -->
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    
     <script>
-        // فرمت عدد با کاما
-        $('input[type="number"]').on('input', function() {
-            var value = $(this).val();
-            if (value) {
-                $(this).next('.formatted-value').remove();
-                var formatted = parseInt(value).toLocaleString('fa-IR');
-                $(this).after('<small class="formatted-value text-muted d-block mt-1">' + formatted + ' ریال</small>');
-            } else {
-                $(this).next('.formatted-value').remove();
+        $(document).ready(function() {
+            // ⭐ جداکننده 3 رقمی برای ورودی قیمت
+            $('#estimatedValueInput').on('input', function() {
+                let value = $(this).val().replace(/,/g, ''); // حذف کاماها
+                
+                // فقط اعداد مجاز
+                value = value.replace(/[^0-9]/g, '');
+                
+                // ذخیره مقدار خام
+                $(this).data('raw-value', value);
+                $('#estimatedValueHidden').val(value);
+                
+                // فرمت با جداکننده
+                if (value) {
+                    const formatted = parseInt(value).toLocaleString('en-US');
+                    $(this).val(formatted);
+                } else {
+                    $(this).val('');
+                }
+            });
+
+            // مقداردهی اولیه
+            const initialValue = $('#estimatedValueInput').data('raw-value');
+            if (initialValue && initialValue > 0) {
+                const formatted = parseInt(initialValue).toLocaleString('en-US');
+                $('#estimatedValueInput').val(formatted);
             }
         });
     </script>

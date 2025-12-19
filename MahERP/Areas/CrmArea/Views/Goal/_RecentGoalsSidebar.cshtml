@@ -1,0 +1,89 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.RecentGoalsViewModel
+
+@if (Model.Goals.Any())
+{
+    <div class="list-group list-group-flush">
+        @foreach (var goal in Model.Goals)
+        {
+            <a href="@Url.Action("Details", "Goal", new { area = "CrmArea", id = goal.Id })" 
+               class="list-group-item list-group-item-action py-2">
+                <div class="d-flex w-100 justify-content-between align-items-start">
+                    <div class="d-flex align-items-start flex-grow-1">
+                        <span class="me-2 @(goal.IsConverted ? "text-success" : "text-primary")">
+                            <i class="fa fa-bullseye"></i>
+                        </span>
+                        <div class="flex-grow-1" style="min-width: 0;">
+                            <div class="fw-semibold small text-truncate" title="@goal.Title">
+                                @goal.Title
+                            </div>
+                            <div class="d-flex align-items-center gap-1 mb-1">
+                                <small class="text-muted">
+                                    <i class="fa @(goal.TargetType == "Contact" ? "fa-user" : "fa-building") fa-fw"></i>
+                                    <span class="text-truncate d-inline-block" style="max-width: 120px;" title="@goal.TargetName">
+                                        @goal.TargetName
+                                    </span>
+                                </small>
+                            </div>
+                            @if (!string.IsNullOrEmpty(goal.CurrentLeadStageTitle))
+                            {
+                                <span class="badge badge-sm" style="background-color: @(goal.CurrentLeadStageColor ?? "#6c757d"); font-size: 0.65rem;">
+                                    @goal.CurrentLeadStageTitle
+                                </span>
+                            }
+                            @if (goal.IsConverted)
+                            {
+                                <span class="badge bg-success badge-sm ms-1" style="font-size: 0.65rem;">
+                                    <i class="fa fa-check fa-xs"></i> تبدیل شده
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <small class="text-muted text-nowrap ms-2">
+                        @{
+                            var dateParts = goal.LastChangeDatePersian.Split(' ');
+                            var timePart = dateParts.Length > 1 ? dateParts[1] : "";
+                        }
+                        @timePart
+                    </small>
+                </div>
+            </a>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center py-4">
+        <i class="fa fa-inbox fa-2x text-muted mb-2"></i>
+        <p class="text-muted small mb-0">هیچ هدفی یافت نشد</p>
+    </div>
+}
+
+<style>
+    /* استایل یکسان با Interaction Sidebar */
+    .list-group-item {
+        border-left: 0;
+        border-right: 0;
+        border-top: 0;
+        transition: background-color 0.15s ease-in-out;
+    }
+    
+    .list-group-item:last-child {
+        border-bottom: 0;
+    }
+    
+    .list-group-item:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+    
+    .badge-sm {
+        font-size: 0.65rem;
+        padding: 0.2em 0.4em;
+    }
+    
+    /* اصلاح truncate در flex */
+    .text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>

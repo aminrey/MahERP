@@ -69,19 +69,23 @@ namespace MahERP.Areas.CrmArea.Controllers
             return View(viewModel);
         }
 
+        #region Modal Actions
+
         /// <summary>
-        /// صفحه ایجاد نوع تعامل جدید
+        /// نمایش مودال افزودن نوع تعامل
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> AddModal()
         {
             var viewModel = new InteractionTypeViewModel
             {
                 IsActive = true,
+                DisplayOrder = 1,
+                ColorCode = "#667eea",
                 LeadStageStatuses = await GetLeadStageStatusesAsync()
             };
 
-            return View(viewModel);
+            return PartialView("_AddInteractionTypeModal", viewModel);
         }
 
         /// <summary>
@@ -91,43 +95,57 @@ namespace MahERP.Areas.CrmArea.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(InteractionTypeViewModel model)
         {
-            if (!ModelState.IsValid)
+            if (string.IsNullOrWhiteSpace(model.Title))
             {
-                model.LeadStageStatuses = await GetLeadStageStatusesAsync();
-                return View(model);
+                return Json(new { 
+                    status = "error", 
+                    message = new[] { new { status = "error", text = "عنوان الزامی است" } } 
+                });
             }
 
-            var userId = _userManager.GetUserId(User);
-
-            var interactionType = new InteractionType
+            try
             {
-                Title = model.Title,
-                Description = model.Description,
-                LeadStageStatusId = model.LeadStageStatusId,
-                DisplayOrder = model.DisplayOrder,
-                ColorCode = model.ColorCode,
-                Icon = model.Icon,
-                IsActive = model.IsActive,
-                CreatorUserId = userId!
-            };
+                var userId = _userManager.GetUserId(User);
 
-            await _interactionTypeRepo.CreateAsync(interactionType);
+                var interactionType = new InteractionType
+                {
+                    Title = model.Title,
+                    Description = model.Description,
+                    LeadStageStatusId = model.LeadStageStatusId,
+                    DisplayOrder = model.DisplayOrder,
+                    ColorCode = model.ColorCode ?? "#667eea",
+                    Icon = model.Icon,
+                    IsActive = model.IsActive,
+                    CreatorUserId = userId!
+                };
 
-            TempData["SuccessMessage"] = "نوع تعامل با موفقیت ایجاد شد";
-            return RedirectToAction(nameof(Index));
+                await _interactionTypeRepo.CreateAsync(interactionType);
+
+                return Json(new { 
+                    status = "success", 
+                    message = new[] { new { status = "success", text = "نوع تعامل با موفقیت ایجاد شد" } },
+                    id = interactionType.Id
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { 
+                    status = "error", 
+                    message = new[] { new { status = "error", text = ex.Message } } 
+                });
+            }
         }
 
         /// <summary>
-        /// صفحه ویرایش نوع تعامل
+        /// نمایش مودال ویرایش نوع تعامل
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> EditModal(int id)
         {
             var interactionType = await _interactionTypeRepo.GetByIdAsync(id);
             if (interactionType == null)
             {
-                TempData["ErrorMessage"] = "نوع تعامل یافت نشد";
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
 
             var viewModel = new InteractionTypeViewModel
@@ -143,7 +161,7 @@ namespace MahERP.Areas.CrmArea.Controllers
                 LeadStageStatuses = await GetLeadStageStatusesAsync()
             };
 
-            return View(viewModel);
+            return PartialView("_EditInteractionTypeModal", viewModel);
         }
 
         /// <summary>
@@ -153,35 +171,67 @@ namespace MahERP.Areas.CrmArea.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(InteractionTypeViewModel model)
         {
-            if (!ModelState.IsValid)
+            if (string.IsNullOrWhiteSpace(model.Title))
             {
-                model.LeadStageStatuses = await GetLeadStageStatusesAsync();
-                return View(model);
+                return Json(new { 
+                    status = "error", 
+                    message = new[] { new { status = "error", text = "عنوان الزامی است" } } 
+                });
             }
 
-            var userId = _userManager.GetUserId(User);
-
-            var interactionType = new InteractionType
+            try
             {
-                Id = model.Id,
-                Title = model.Title,
-                Description = model.Description,
-                LeadStageStatusId = model.LeadStageStatusId,
-                DisplayOrder = model.DisplayOrder,
-                ColorCode = model.ColorCode,
-                Icon = model.Icon,
-                IsActive = model.IsActive,
-                LastUpdaterUserId = userId
+                var userId = _userManager.GetUserId(User);
+
+                var interactionType = new InteractionType
+                {
+                    Id = model.Id,
+                    Title = model.Title,
+                    Description = model.Description,
+                    LeadStageStatusId = model.LeadStageStatusId,
+                    DisplayOrder = model.DisplayOrder,
+                    ColorCode = model.ColorCode ?? "#667eea",
+                    Icon = model.Icon,
+                    IsActive = model.IsActive,
+                    LastUpdaterUserId = userId
+                };
+
+                var success = await _interactionTypeRepo.UpdateAsync(interactionType);
+
+                return Json(new { 
+                    status = success ? "success" : "error", 
+                    message = new[] { new { status = success ? "success" : "error", text = success ? "نوع تعامل بروزرسانی شد" : "خطا در بروزرسانی" } }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { 
+                    status = "error", 
+                    message = new[] { new { status = "error", text = ex.Message } } 
+                });
+            }
+        }
+
+        /// <summary>
+        /// نمایش مودال حذف نوع تعامل
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> DeleteModal(int id)
+        {
+            var interactionType = await _interactionTypeRepo.GetByIdAsync(id);
+            if (interactionType == null)
+            {
+                return NotFound();
+            }
+
+            var viewModel = new InteractionTypeViewModel
+            {
+                Id = interactionType.Id,
+                Title = interactionType.Title,
+                Description = interactionType.Description
             };
 
-            var success = await _interactionTypeRepo.UpdateAsync(interactionType);
-
-            if (success)
-                TempData["SuccessMessage"] = "نوع تعامل با موفقیت بروزرسانی شد";
-            else
-                TempData["ErrorMessage"] = "خطا در بروزرسانی نوع تعامل";
-
-            return RedirectToAction(nameof(Index));
+            return PartialView("_DeleteInteractionTypeModal", viewModel);
         }
 
         /// <summary>
@@ -191,15 +241,27 @@ namespace MahERP.Areas.CrmArea.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var success = await _interactionTypeRepo.DeleteAsync(id);
+            try
+            {
+                var success = await _interactionTypeRepo.DeleteAsync(id);
 
-            if (success)
-                TempData["SuccessMessage"] = "نوع تعامل با موفقیت غیرفعال شد";
-            else
-                TempData["ErrorMessage"] = "خطا در حذف نوع تعامل";
-
-            return RedirectToAction(nameof(Index));
+                return Json(new { 
+                    status = success ? "success" : "error", 
+                    message = new[] { new { status = success ? "success" : "error", text = success ? "نوع تعامل غیرفعال شد" : "خطا در غیرفعال کردن" } }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { 
+                    status = "error", 
+                    message = new[] { new { status = "error", text = ex.Message } } 
+                });
+            }
         }
+
+        #endregion
+
+        #region Private Methods
 
         /// <summary>
         /// دریافت لیست وضعیت‌های لید برای Dropdown
@@ -215,5 +277,7 @@ namespace MahERP.Areas.CrmArea.Controllers
                 Icon = s.Icon
             }).ToList();
         }
+
+        #endregion
     }
 }

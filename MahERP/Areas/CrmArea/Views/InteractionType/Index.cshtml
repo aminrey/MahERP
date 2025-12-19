@@ -1,24 +1,30 @@
 ﻿@model List<MahERP.DataModelLayer.ViewModels.CrmViewModels.InteractionTypeViewModel>
 @{
     ViewData["Title"] = "انواع تعامل";
-    Layout = "~/Areas/CrmArea/Views/Shared/_CrmLayout.cshtml";
 }
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">
-                    <i class="fa fa-list-alt me-2"></i>
-                    انواع تعامل
-                </h4>
-                <a asp-action="Create" class="btn btn-primary">
-                    <i class="fa fa-plus me-1"></i>
-                    نوع تعامل جدید
-                </a>
-            </div>
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-tags text-primary me-2"></i>
+                انواع تعامل
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">CRM</li>
+                    <li class="breadcrumb-item">تنظیمات</li>
+                    <li class="breadcrumb-item active">انواع تعامل</li>
+                </ol>
+            </nav>
         </div>
     </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
 
     @if (TempData["SuccessMessage"] != null)
     {
@@ -38,48 +44,67 @@
         </div>
     }
 
-    <div class="card shadow-sm">
-        <div class="card-body">
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-list me-1"></i>
+                لیست انواع تعامل
+            </h3>
+            <div class="block-options">
+                <button type="button" class="btn btn-sm btn-alt-primary" onclick="openAddInteractionTypeModal()">
+                    <i class="fa fa-plus me-1"></i>
+                    نوع تعامل جدید
+                </button>
+            </div>
+        </div>
+        <div class="block-content">
             @if (Model.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
+                    <table class="table table-hover table-vcenter">
+                        <thead>
                             <tr>
-                                <th style="width: 50px">#</th>
+                                <th class="text-center" style="width: 60px">#</th>
                                 <th>عنوان</th>
-                                <th>وضعیت لید</th>
-                                <th>ترتیب</th>
-                                <th>وضعیت</th>
-                                <th style="width: 150px">عملیات</th>
+                                <th>مرحله قیف فروش</th>
+                                <th class="text-center" style="width: 80px">ترتیب</th>
+                                <th class="text-center" style="width: 100px">وضعیت</th>
+                                <th class="text-center" style="width: 120px">عملیات</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var item in Model)
                             {
                                 <tr class="@(!item.IsActive ? "table-secondary" : "")">
-                                    <td>@item.Id</td>
+                                    <td class="text-center fw-semibold">@item.Id</td>
                                     <td>
-                                        @if (!string.IsNullOrEmpty(item.Icon))
-                                        {
-                                            <i class="fa @item.Icon me-2" style="color: @(item.ColorCode ?? "#6c757d")"></i>
-                                        }
-                                        @if (!string.IsNullOrEmpty(item.ColorCode))
-                                        {
-                                            <span class="badge" style="background-color: @item.ColorCode">@item.Title</span>
-                                        }
-                                        else
-                                        {
-                                            @item.Title
-                                        }
+                                        <div class="d-flex align-items-center">
+                                            @if (!string.IsNullOrEmpty(item.Icon))
+                                            {
+                                                <span class="me-2" style="color: @(item.ColorCode ?? "#6c757d")">
+                                                    <i class="fa @item.Icon"></i>
+                                                </span>
+                                            }
+                                            else if (!string.IsNullOrEmpty(item.ColorCode))
+                                            {
+                                                <span class="badge rounded-pill me-2" style="background-color: @item.ColorCode; width: 20px; height: 20px;"></span>
+                                            }
+                                            <div>
+                                                <span class="fw-semibold">@item.Title</span>
+                                                @if (!string.IsNullOrEmpty(item.Description))
+                                                {
+                                                    <br /><small class="text-muted">@item.Description</small>
+                                                }
+                                            </div>
+                                        </div>
                                     </td>
                                     <td>
                                         <span class="badge" style="background-color: @(item.LeadStageStatusColor ?? "#6c757d")">
-                                            @item.LeadStageStatusTitle
+                                            @(item.LeadStageStatusTitle ?? "تعیین نشده")
                                         </span>
                                     </td>
-                                    <td>@item.DisplayOrder</td>
-                                    <td>
+                                    <td class="text-center">@item.DisplayOrder</td>
+                                    <td class="text-center">
                                         @if (item.IsActive)
                                         {
                                             <span class="badge bg-success">فعال</span>
@@ -89,20 +114,16 @@
                                             <span class="badge bg-secondary">غیرفعال</span>
                                         }
                                     </td>
-                                    <td>
+                                    <td class="text-center">
                                         <div class="btn-group btn-group-sm">
-                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-primary" title="ویرایش">
-                                                <i class="fa fa-edit"></i>
-                                            </a>
+                                            <button class="btn btn-alt-primary" onclick="openEditInteractionTypeModal(@item.Id)" title="ویرایش">
+                                                <i class="fa fa-pencil-alt"></i>
+                                            </button>
                                             @if (item.IsActive)
                                             {
-                                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline"
-                                                      onsubmit="return confirm('آیا از غیرفعال کردن این نوع تعامل مطمئن هستید؟');">
-                                                    @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-outline-danger" title="غیرفعال کردن">
-                                                        <i class="fa fa-ban"></i>
-                                                    </button>
-                                                </form>
+                                                <button class="btn btn-alt-danger" onclick="openDeleteInteractionTypeModal(@item.Id)" title="غیرفعال کردن">
+                                                    <i class="fa fa-ban"></i>
+                                                </button>
                                             }
                                         </div>
                                     </td>
@@ -114,31 +135,89 @@
             }
             else
             {
-                <div class="text-center py-5 text-muted">
-                    <i class="fa fa-inbox fa-3x mb-3"></i>
-                    <p>هیچ نوع تعاملی تعریف نشده است</p>
-                    <a asp-action="Create" class="btn btn-primary">
+                <div class="text-center py-5">
+                    <i class="fa fa-tags fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">هیچ نوع تعاملی تعریف نشده است</p>
+                    <button type="button" class="btn btn-primary" onclick="openAddInteractionTypeModal()">
                         <i class="fa fa-plus me-1"></i>
                         اولین نوع تعامل را ایجاد کنید
-                    </a>
+                    </button>
                 </div>
             }
         </div>
     </div>
 
-    <div class="card shadow-sm mt-4">
-        <div class="card-header bg-light">
-            <h6 class="mb-0">
-                <i class="fa fa-info-circle me-2"></i>
+    <!-- راهنما -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-lightbulb me-1"></i>
                 راهنما
-            </h6>
+            </h3>
+            <div class="block-options">
+                <button type="button" class="btn-block-option" data-toggle="block-option" data-action="content_toggle"></button>
+            </div>
         </div>
-        <div class="card-body">
-            <ul class="mb-0">
-                <li><strong>نوع تعامل:</strong> هر تعامل با مشتری یک نوع دارد (مثلاً: تماس تلفنی، جلسه حضوری، ایمیل)</li>
-                <li><strong>وضعیت لید:</strong> هر نوع تعامل مشخص می‌کند که لید در کدام مرحله از قیف فروش قرار دارد</li>
-                <li>مراحل قیف فروش: آگاهی → علاقه‌مندی → ارزیابی → تصمیم‌گیری → خرید</li>
-            </ul>
+        <div class="block-content">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="fw-semibold">نوع تعامل چیست؟</h6>
+                    <p class="small text-muted">
+                        هر تعامل با مشتری یک نوع دارد که مشخص می‌کند چه نوع ارتباطی با مشتری برقرار شده است.
+                    </p>
+                    <ul class="small text-muted">
+                        <li><strong>تماس تلفنی:</strong> مکالمه تلفنی با مشتری</li>
+                        <li><strong>جلسه حضوری:</strong> ملاقات حضوری با مشتری</li>
+                        <li><strong>ایمیل:</strong> ارسال یا دریافت ایمیل</li>
+                        <li><strong>پیامک:</strong> ارسال پیامک تبلیغاتی یا اطلاع‌رسانی</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-semibold">ارتباط با قیف فروش</h6>
+                    <p class="small text-muted">
+                        هر نوع تعامل می‌تواند به یک مرحله از قیف فروش مرتبط باشد:
+                    </p>
+                    <ul class="small text-muted">
+                        <li><strong>آگاهی:</strong> اولین آشنایی با مشتری</li>
+                        <li><strong>علاقه‌مندی:</strong> مشتری علاقه‌مند شده</li>
+                        <li><strong>ارزیابی:</strong> مشتری در حال بررسی است</li>
+                        <li><strong>تصمیم‌گیری:</strong> مشتری آماده تصمیم است</li>
+                        <li><strong>خرید:</strong> مشتری خرید کرده</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+<!-- END Page Content -->
+
+@section Scripts {
+    <script>
+        function openAddInteractionTypeModal() {
+            createAndShowModal({
+                url: '@Url.Action("AddModal", "InteractionType", new { area = "CrmArea" })',
+                onHidden: function() {
+                    location.reload();
+                }
+            });
+        }
+
+        function openEditInteractionTypeModal(id) {
+            createAndShowModal({
+                url: '@Url.Action("EditModal", "InteractionType", new { area = "CrmArea" })' + '?id=' + id,
+                onHidden: function() {
+                    location.reload();
+                }
+            });
+        }
+
+        function openDeleteInteractionTypeModal(id) {
+            createAndShowModal({
+                url: '@Url.Action("DeleteModal", "InteractionType", new { area = "CrmArea" })' + '?id=' + id,
+                onHidden: function() {
+                    location.reload();
+                }
+            });
+        }
+    </script>
+}

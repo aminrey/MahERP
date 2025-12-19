@@ -1,192 +1,0 @@
-﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmOpportunityViewModel
-@{
-    Layout = null;
-}
-
-<!-- ========================================
-     ⭐⭐⭐ MARK AS WON MODAL
-     ======================================== -->
-<div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content modal-contents">
-        <div class="block block-rounded block-themed block-transparent mb-0">
-            <div class="block-header bg-success">
-                <h3 class="block-title text-white">
-                    <i class="fas fa-trophy me-2"></i>🎉 تبریک! ثبت برنده شدن
-                </h3>
-                <div class="block-options">
-                    <button aria-label="Close" class="btn-block-option" data-bs-dismiss="modal" type="button">
-                        <i class="fa fa-fw fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <form asp-area="CrmArea" asp-controller="Opportunity" asp-action="MarkAsWon" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" asp-for="Id" />
-                
-                <div class="block-content text-center">
-                    <div class="mb-4">
-                        <i class="fas fa-trophy text-success" style="font-size: 4rem;"></i>
-                    </div>
-                    
-                    <p class="lead">آیا از برنده شدن فرصت <strong>@Model.Title</strong> اطمینان دارید؟</p>
-                    <p class="text-success fw-bold">ارزش: @Model.ValueFormatted تومان</p>
-                    
-                    <div class="mb-3 text-start">
-                        <label class="form-label">یادداشت (اختیاری)</label>
-                        <textarea name="Note" class="form-control" rows="2" placeholder="توضیحات پیروزی..."></textarea>
-                    </div>
-                </div>
-                
-                <div class="block-content block-content-full text-end bg-body">
-                    <button class="btn btn-hero btn-secondary" data-bs-dismiss="modal" type="button">انصراف</button>
-                    <button class="btn btn-hero btn-success" data-save="modal-ajax-save" type="button">
-                        <i class="fas fa-check me-1"></i>
-                        ثبت برنده شدن
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- ========================================
-     ⭐⭐⭐ MARK AS LOST MODAL
-     ======================================== -->
-<div class="modal fade" id="lostModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-times-circle me-2"></i>
-                    ثبت از دست رفتن فرصت
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    فرصت <strong>@Model.Title</strong> به عنوان از دست رفته ثبت خواهد شد.
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">دلیل از دست رفتن <span class="text-danger">*</span></label>
-                    <select id="lostReason" class="form-select" required>
-                        <option value="">انتخاب کنید...</option>
-                        <option value="قیمت بالا">قیمت بالا</option>
-                        <option value="انتخاب رقیب">انتخاب رقیب</option>
-                        <option value="تغییر نیاز مشتری">تغییر نیاز مشتری</option>
-                        <option value="عدم بودجه">عدم بودجه</option>
-                        <option value="زمان‌بندی نامناسب">زمان‌بندی نامناسب</option>
-                        <option value="عدم تصمیم‌گیری">عدم تصمیم‌گیری مشتری</option>
-                        <option value="محصول/خدمات نامناسب">محصول/خدمات نامناسب</option>
-                        <option value="مشکلات فنی">مشکلات فنی</option>
-                        <option value="سایر">سایر</option>
-                    </select>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">نام رقیب برنده (اختیاری)</label>
-                    <input type="text" id="winningCompetitor" class="form-control" placeholder="نام شرکت رقیب..." />
-                    <small class="text-muted">اگر رقیب برنده شده، نام آن را وارد کنید</small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-                <button type="button" class="btn btn-danger" onclick="confirmMarkAsLost()">
-                    <i class="fas fa-times-circle me-1"></i>
-                    ثبت از دست رفتن
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ========================================
-     ⭐⭐⭐ ADD PRODUCT MODAL
-     ======================================== -->
-<div class="modal fade" id="addProductModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-box me-2"></i>
-                    افزودن محصول / خدمات
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addProductForm">
-                    <input type="hidden" name="OpportunityId" value="@Model.Id" />
-                    
-                    <div class="mb-3">
-                        <label class="form-label">نام محصول / خدمات <span class="text-danger">*</span></label>
-                        <input type="text" name="ProductName" class="form-control" required placeholder="نام محصول..." />
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">توضیحات</label>
-                        <textarea name="Description" class="form-control" rows="2" placeholder="توضیحات..."></textarea>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">تعداد</label>
-                                <input type="number" name="Quantity" class="form-control" value="1" min="1" />
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">قیمت واحد (تومان)</label>
-                                <input type="number" name="UnitPrice" class="form-control" value="0" min="0" />
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">تخفیف (%)</label>
-                                <input type="number" name="DiscountPercent" class="form-control" value="0" min="0" max="100" />
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-                <button type="button" class="btn btn-primary" onclick="addProduct()">
-                    <i class="fas fa-plus me-1"></i>
-                    افزودن
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    function addProduct() {
-        const form = document.getElementById('addProductForm');
-        const formData = new FormData(form);
-        
-        fetch('@Url.Action("AddProduct", "Pipeline")', {
-            method: 'POST',
-            body: new URLSearchParams(formData),
-            headers: {
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                bootstrap.Modal.getInstance(document.getElementById('addProductModal')).hide();
-                toastr.success(data.message);
-                location.reload();
-            } else {
-                toastr.error(data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            toastr.error('خطا در افزودن محصول');
-        });
-    }
-</script>

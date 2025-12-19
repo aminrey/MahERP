@@ -1,0 +1,89 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.InteractionTypeViewModel
+
+<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Id" value="@Model.Id" />
+            
+            <div class="modal-header bg-primary">
+                <h5 class="modal-title text-white">
+                    <i class="fa fa-edit me-1"></i>
+                    ویرایش نوع تعامل
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label class="form-label">
+                                عنوان <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="Title" class="form-control" value="@Model.Title" required autofocus />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">ترتیب نمایش</label>
+                            <input type="number" name="DisplayOrder" class="form-control" value="@Model.DisplayOrder" min="1" />
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">توضیحات</label>
+                    <textarea name="Description" class="form-control" rows="2">@Model.Description</textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">مرحله قیف فروش</label>
+                            <select name="LeadStageStatusId" class="form-select">
+                                <option value="">-- انتخاب کنید --</option>
+                                @foreach (var stage in Model.LeadStageStatuses)
+                                {
+                                    <option value="@stage.Id" selected="@(stage.Id == Model.LeadStageStatusId)">@stage.Title</option>
+                                }
+                            </select>
+                            <small class="text-muted">این نوع تعامل در کدام مرحله از قیف فروش استفاده می‌شود؟</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label">رنگ</label>
+                            <input type="color" name="ColorCode" class="form-control form-control-color w-100" value="@(Model.ColorCode ?? "#667eea")" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label">آیکون</label>
+                            <input type="text" name="Icon" class="form-control" value="@Model.Icon" placeholder="fa-phone" />
+                            <small class="text-muted">مثال: fa-phone</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="IsActive" value="true" class="form-check-input" id="isActiveEdit" @(Model.IsActive ? "checked" : "") />
+                        <label class="form-check-label" for="isActiveEdit">فعال</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" class="btn btn-primary" data-save="modal-ajax-save">
+                    <i class="fa fa-check me-1"></i>
+                    ذخیره تغییرات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

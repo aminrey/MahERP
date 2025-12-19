@@ -1,181 +1,185 @@
 ﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.CrmLeadStatusViewModel
 
-<div class="modal-header bg-success text-white">
-    <h5 class="modal-title">
-        <i class="fa fa-plus-circle me-2"></i>
-        ایجاد وضعیت جدید
-    </h5>
-    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+            <h5 class="modal-title">
+                <i class="fa fa-plus-circle me-2"></i>
+                ایجاد وضعیت جدید
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+
+        <form asp-action="Create" asp-controller="LeadStatus" asp-area="CrmArea" method="post">
+            @Html.AntiForgeryToken()
+            
+            <div class="modal-body">
+                <div class="row">
+                    <!-- عنوان فارسی -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label" for="Title">
+                            عنوان <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="Title" name="Title" 
+                               value="@Model.Title" placeholder="مثال: در حال بررسی" required />
+                        <span asp-validation-for="Title" class="text-danger"></span>
+                    </div>
+
+                    <!-- عنوان انگلیسی -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label" for="TitleEnglish">عنوان انگلیسی</label>
+                        <input type="text" class="form-control" id="TitleEnglish" name="TitleEnglish" 
+                               value="@Model.TitleEnglish" placeholder="مثال: Under Review" dir="ltr" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- رنگ -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label" for="ColorCode">رنگ</label>
+                        <div class="input-group">
+                            <input type="color" class="form-control form-control-color" id="ColorPicker" 
+                                   value="@Model.ColorCode" onchange="updateColorCode(this.value)" />
+                            <input type="text" class="form-control" id="ColorCode" name="ColorCode" 
+                                   value="@Model.ColorCode" placeholder="#6c757d" dir="ltr" />
+                        </div>
+                    </div>
+
+                    <!-- آیکون -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label" for="Icon">آیکون</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fa @Model.Icon" id="IconPreview"></i>
+                            </span>
+                            @Html.DropDownList("Icon", new SelectList(new[] {
+                                new { Value = "fa-circle", Text = "● دایره" },
+                                new { Value = "fa-star", Text = "★ ستاره" },
+                                new { Value = "fa-check", Text = "✓ تیک" },
+                                new { Value = "fa-times", Text = "✗ ضربدر" },
+                                new { Value = "fa-clock", Text = "⏰ ساعت" },
+                                new { Value = "fa-hourglass-half", Text = "⏳ ساعت شنی" },
+                                new { Value = "fa-phone", Text = "📞 تلفن" },
+                                new { Value = "fa-envelope", Text = "✉ پاکت" },
+                                new { Value = "fa-handshake", Text = "🤝 دست دادن" },
+                                new { Value = "fa-user-check", Text = "👤✓ کاربر تأیید" },
+                                new { Value = "fa-user-times", Text = "👤✗ کاربر رد" },
+                                new { Value = "fa-flag", Text = "🚩 پرچم" },
+                                new { Value = "fa-fire", Text = "🔥 داغ" },
+                                new { Value = "fa-snowflake", Text = "❄ سرد" }
+                            }, "Value", "Text", Model.Icon), new { @class = "form-select", onchange = "updateIconPreview(this.value)" })
+                        </div>
+                    </div>
+
+                    <!-- ترتیب نمایش -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label" for="DisplayOrder">ترتیب نمایش</label>
+                        <input type="number" class="form-control" id="DisplayOrder" name="DisplayOrder" 
+                               value="@Model.DisplayOrder" min="1" max="99" />
+                    </div>
+                </div>
+
+                <!-- پیش‌نمایش -->
+                <div class="mb-3">
+                    <label class="form-label">پیش‌نمایش</label>
+                    <div class="border rounded p-3 bg-light text-center">
+                        <span id="BadgePreview" class="badge" style="background-color: @Model.ColorCode;">
+                            <i class="fa @Model.Icon me-1"></i>
+                            <span id="TitlePreview">@(string.IsNullOrEmpty(Model.Title) ? "عنوان وضعیت" : Model.Title)</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- توضیحات -->
+                    <div class="col-12 mb-3">
+                        <label class="form-label" for="Description">توضیحات</label>
+                        <textarea class="form-control" id="Description" name="Description" rows="2" 
+                                  placeholder="توضیحات این وضعیت...">@Model.Description</textarea>
+                    </div>
+                </div>
+
+                <hr />
+
+                <!-- تنظیمات ویژه -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="IsDefault" name="IsDefault" 
+                                   @(Model.IsDefault ? "checked" : "") />
+                            <label class="form-check-label" for="IsDefault">
+                                <i class="fa fa-star text-warning me-1"></i>
+                                وضعیت پیش‌فرض
+                            </label>
+                        </div>
+                        <small class="text-muted d-block ms-4">سرنخ‌های جدید با این وضعیت ایجاد می‌شوند</small>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="IsFinal" name="IsFinal" 
+                                   @(Model.IsFinal ? "checked" : "") onchange="togglePositive()" />
+                            <label class="form-check-label" for="IsFinal">
+                                <i class="fa fa-flag-checkered text-info me-1"></i>
+                                وضعیت نهایی
+                            </label>
+                        </div>
+                        <small class="text-muted d-block ms-4">پایان چرخه عمر سرنخ</small>
+                    </div>
+                </div>
+
+                <div class="row" id="PositiveRow" style="@(Model.IsFinal ? "" : "display: none;")">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="IsPositive" name="IsPositive" 
+                                   @(Model.IsPositive ? "checked" : "") />
+                            <label class="form-check-label" for="IsPositive">
+                                <i class="fa fa-check-circle text-success me-1"></i>
+                                نتیجه مثبت (تبدیل به مشتری)
+                            </label>
+                        </div>
+                        <small class="text-muted d-block ms-4">در نرخ تبدیل محاسبه می‌شود</small>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch disabled">
+                            <input class="form-check-input" type="checkbox" id="IsNegative" disabled 
+                                   @(!Model.IsPositive && Model.IsFinal ? "checked" : "") />
+                            <label class="form-check-label text-muted" for="IsNegative">
+                                <i class="fa fa-times-circle text-danger me-1"></i>
+                                نتیجه منفی (از دست رفته)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="IsActive" name="IsActive" 
+                                   @(Model.IsActive ? "checked" : "") />
+                            <label class="form-check-label" for="IsActive">
+                                <i class="fa fa-power-off text-success me-1"></i>
+                                فعال
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" class="btn btn-success" data-save="modal-ajax-save">
+                    <i class="fa fa-save me-1"></i>
+                    ذخیره
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
-
-<form asp-action="Create" asp-controller="LeadStatus" method="post" data-toggle="ajax-form">
-    @Html.AntiForgeryToken()
-    
-    <div class="modal-body">
-        <div class="row">
-            <!-- عنوان فارسی -->
-            <div class="col-md-6 mb-3">
-                <label class="form-label" for="Title">
-                    عنوان <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" id="Title" name="Title" 
-                       value="@Model.Title" placeholder="مثال: در حال بررسی" required />
-                <span asp-validation-for="Title" class="text-danger"></span>
-            </div>
-
-            <!-- عنوان انگلیسی -->
-            <div class="col-md-6 mb-3">
-                <label class="form-label" for="TitleEnglish">عنوان انگلیسی</label>
-                <input type="text" class="form-control" id="TitleEnglish" name="TitleEnglish" 
-                       value="@Model.TitleEnglish" placeholder="مثال: Under Review" dir="ltr" />
-            </div>
-        </div>
-
-        <div class="row">
-            <!-- رنگ -->
-            <div class="col-md-4 mb-3">
-                <label class="form-label" for="ColorCode">رنگ</label>
-                <div class="input-group">
-                    <input type="color" class="form-control form-control-color" id="ColorPicker" 
-                           value="@Model.ColorCode" onchange="updateColorCode(this.value)" />
-                    <input type="text" class="form-control" id="ColorCode" name="ColorCode" 
-                           value="@Model.ColorCode" placeholder="#6c757d" dir="ltr" />
-                </div>
-            </div>
-
-            <!-- آیکون -->
-            <div class="col-md-4 mb-3">
-                <label class="form-label" for="Icon">آیکون</label>
-                <div class="input-group">
-                    <span class="input-group-text">
-                        <i class="fa @Model.Icon" id="IconPreview"></i>
-                    </span>
-                    @Html.DropDownList("Icon", new SelectList(new[] {
-                        new { Value = "fa-circle", Text = "● دایره" },
-                        new { Value = "fa-star", Text = "★ ستاره" },
-                        new { Value = "fa-check", Text = "✓ تیک" },
-                        new { Value = "fa-times", Text = "✗ ضربدر" },
-                        new { Value = "fa-clock", Text = "⏰ ساعت" },
-                        new { Value = "fa-hourglass-half", Text = "⏳ ساعت شنی" },
-                        new { Value = "fa-phone", Text = "📞 تلفن" },
-                        new { Value = "fa-envelope", Text = "✉ پاکت" },
-                        new { Value = "fa-handshake", Text = "🤝 دست دادن" },
-                        new { Value = "fa-user-check", Text = "👤✓ کاربر تأیید" },
-                        new { Value = "fa-user-times", Text = "👤✗ کاربر رد" },
-                        new { Value = "fa-flag", Text = "🚩 پرچم" },
-                        new { Value = "fa-fire", Text = "🔥 داغ" },
-                        new { Value = "fa-snowflake", Text = "❄ سرد" }
-                    }, "Value", "Text", Model.Icon), new { @class = "form-select", onchange = "updateIconPreview(this.value)" })
-                </div>
-            </div>
-
-            <!-- ترتیب نمایش -->
-            <div class="col-md-4 mb-3">
-                <label class="form-label" for="DisplayOrder">ترتیب نمایش</label>
-                <input type="number" class="form-control" id="DisplayOrder" name="DisplayOrder" 
-                       value="@Model.DisplayOrder" min="1" max="99" />
-            </div>
-        </div>
-
-        <!-- پیش‌نمایش -->
-        <div class="mb-3">
-            <label class="form-label">پیش‌نمایش</label>
-            <div class="border rounded p-3 bg-light text-center">
-                <span id="BadgePreview" class="badge" style="background-color: @Model.ColorCode;">
-                    <i class="fa @Model.Icon me-1"></i>
-                    <span id="TitlePreview">@(string.IsNullOrEmpty(Model.Title) ? "عنوان وضعیت" : Model.Title)</span>
-                </span>
-            </div>
-        </div>
-
-        <div class="row">
-            <!-- توضیحات -->
-            <div class="col-12 mb-3">
-                <label class="form-label" for="Description">توضیحات</label>
-                <textarea class="form-control" id="Description" name="Description" rows="2" 
-                          placeholder="توضیحات این وضعیت...">@Model.Description</textarea>
-            </div>
-        </div>
-
-        <hr />
-
-        <!-- تنظیمات ویژه -->
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="IsDefault" name="IsDefault" 
-                           @(Model.IsDefault ? "checked" : "") />
-                    <label class="form-check-label" for="IsDefault">
-                        <i class="fa fa-star text-warning me-1"></i>
-                        وضعیت پیش‌فرض
-                    </label>
-                </div>
-                <small class="text-muted d-block ms-4">سرنخ‌های جدید با این وضعیت ایجاد می‌شوند</small>
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="IsFinal" name="IsFinal" 
-                           @(Model.IsFinal ? "checked" : "") onchange="togglePositive()" />
-                    <label class="form-check-label" for="IsFinal">
-                        <i class="fa fa-flag-checkered text-info me-1"></i>
-                        وضعیت نهایی
-                    </label>
-                </div>
-                <small class="text-muted d-block ms-4">پایان چرخه عمر سرنخ</small>
-            </div>
-        </div>
-
-        <div class="row" id="PositiveRow" style="@(Model.IsFinal ? "" : "display: none;")">
-            <div class="col-md-6 mb-3">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="IsPositive" name="IsPositive" 
-                           @(Model.IsPositive ? "checked" : "") />
-                    <label class="form-check-label" for="IsPositive">
-                        <i class="fa fa-check-circle text-success me-1"></i>
-                        نتیجه مثبت (تبدیل به مشتری)
-                    </label>
-                </div>
-                <small class="text-muted d-block ms-4">در نرخ تبدیل محاسبه می‌شود</small>
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <div class="form-check form-switch disabled">
-                    <input class="form-check-input" type="checkbox" id="IsNegative" disabled 
-                           @(!Model.IsPositive && Model.IsFinal ? "checked" : "") />
-                    <label class="form-check-label text-muted" for="IsNegative">
-                        <i class="fa fa-times-circle text-danger me-1"></i>
-                        نتیجه منفی (از دست رفته)
-                    </label>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="IsActive" name="IsActive" 
-                           @(Model.IsActive ? "checked" : "") />
-                    <label class="form-check-label" for="IsActive">
-                        <i class="fa fa-power-off text-success me-1"></i>
-                        فعال
-                    </label>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            <i class="fa fa-times me-1"></i>
-            انصراف
-        </button>
-        <button type="submit" class="btn btn-success">
-            <i class="fa fa-save me-1"></i>
-            ذخیره
-        </button>
-    </div>
-</form>
 
 <script>
     // بروزرسانی رنگ

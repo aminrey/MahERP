@@ -380,3 +380,295 @@ window.setTaskFocus = setTaskFocus;
 window.removeTaskFocus = removeTaskFocus;
 window.showSuccessMessage = showSuccessMessage;
 window.showErrorMessage = showErrorMessage;
+
+// ========================================
+// ⭐⭐⭐ NESTED MODAL SUPPORT
+// ========================================
+
+/**
+ * ⭐⭐⭐ ایجاد و نمایش مودال تو در تو (Nested Modal)
+ * برای استفاده در QuickAdd و سایر مواردی که نیاز به Modal داخل Modal دارند
+ * 
+ * @param {string|object} urlOrOptions - URL یا شیء تنظیمات
+ * @param {object} options - تنظیمات اضافی
+ * @returns {Promise} Promise که با نمایش modal resolve می‌شود
+ */
+function createAndShowNestedModal(urlOrOptions, options = {}) {
+    // ⭐ Parse parameters
+    let config = {};
+
+    if (typeof urlOrOptions === 'string') {
+        config = { url: urlOrOptions, ...options };
+    } else if (typeof urlOrOptions === 'object') {
+        config = { ...urlOrOptions };
+    } else {
+        console.error('❌ Invalid parameter type for createAndShowNestedModal');
+        return Promise.reject(new Error('Invalid parameter'));
+    }
+
+    // ⭐ Default config for nested modals
+    const defaults = {
+        url: null,
+        modalId: 'nested-modal-' + Date.now(),
+        backdrop: false, // ⭐ مهم: بدون backdrop برای modal های تو در تو
+        keyboard: true,
+        removeOnHide: true,
+        onShown: null,
+        onHidden: null,
+        onSubmitSuccess: null,
+        onLoadError: null
+    };
+
+    config = { ...defaults, ...config };
+
+    console.log('🎯 Opening nested modal:', config.modalId);
+
+    // ⭐ پیدا کردن parent modal
+    const $parentModal = $('.modal.show').last();
+    const parentZIndex = parseInt($parentModal.css('z-index') || 1050);
+    
+    // ⭐⭐⭐ ساختار مودال تو در تو
+    const modalHtml = `<div class="modal fade" id="${config.modalId}" tabindex="-1" role="dialog" aria-hidden="true" data-bs-focus="false"></div>`;
+
+    // ⭐ اضافه کردن به DOM
+    $('body').append(modalHtml);
+    const $modal = $('#' + config.modalId);
+
+    return new Promise((resolve, reject) => {
+
+        $.ajax({
+            url: config.url,
+            type: 'GET',
+            dataType: 'html',
+            beforeSend: function () {
+                console.log('📤 Loading nested modal from:', config.url);
+            },
+            success: function (data) {
+                try {
+                    // ⭐ بررسی خطای JSON
+                    if (typeof data === 'string' && data.trim().startsWith('{')) {
+                        try {
+                            const errorResponse = JSON.parse(data);
+                            if (errorResponse.status === 'error') {
+                                throw new Error(errorResponse.message?.[0]?.text || 'خطا در بارگذاری محتوا');
+                            }
+                        } catch (parseError) {
+                            // Not JSON, continue
+                        }
+                    }
+
+                    // ⭐ اعتبارسنجی محتوا
+                    if (!data || data.trim() === '' || data === '{}') {
+                        throw new Error('محتوای مودال خالی است');
+                    }
+
+                    console.log('✅ Nested modal content loaded');
+
+                    // ⭐ درج محتوا
+                    $modal.html(data);
+
+                    // ⭐ پردازش URL ها
+                    if (typeof ModalUtils !== 'undefined' && ModalUtils.processUrlsInContainer) {
+                        try {
+                            ModalUtils.processUrlsInContainer($modal);
+                        } catch (err) {
+                            console.warn('⚠️ ModalUtils error:', err);
+                        }
+                    }
+
+                    // ⭐ راه‌اندازی Select2
+                    if (typeof DynamicSelect2Manager !== 'undefined') {
+                        try {
+                            $modal.find('.js-select2').attr('data-container', '#' + config.modalId);
+                            DynamicSelect2Manager.reinitializeSelect2InDiv($modal);
+                        } catch (err) {
+                            console.warn('⚠️ Select2 error:', err);
+                        }
+                    }
+
+                    // ⭐ راه‌اندازی Persian Datepicker
+                    if (typeof $.fn.persianDatepicker !== 'undefined') {
+                        try {
+                            $modal.find('.js-flatpickr').persianDatepicker({
+                                initialValue: true,
+                                format: 'YYYY/MM/DD',
+                                autoClose: true
+                            });
+                        } catch (err) {
+                            console.warn('⚠️ PersianDatepicker error:', err);
+                        }
+                    }
+
+                    // ⭐⭐⭐ نمایش nested modal (بدون backdrop)
+                    const modalInstance = new bootstrap.Modal($modal[0], {
+                        backdrop: config.backdrop, // false برای nested
+                        keyboard: config.keyboard
+                    });
+
+                    modalInstance.show();
+
+                    // ⭐ Setup form handler
+                    if (typeof setupModalFormHandler === 'function') {
+                        setupModalFormHandler($modal, config, modalInstance);
+                    }
+
+                    // ⭐ Event: shown
+                    $modal.on('shown.bs.modal', function () {
+                        console.log('✅ Nested modal shown:', config.modalId);
+
+                        // ⭐ تنظیم z-index برای modal تو در تو
+                        $modal.css('z-index', parentZIndex + 10);
+                        
+                        // ⭐ اضافه کردن backdrop شفاف اگر نیاز باشد
+                        if (config.backdrop === 'dim') {
+                            $('<div class="modal-backdrop fade show nested-backdrop"></div>')
+                                .css({
+                                    'z-index': parentZIndex + 9,
+                                    'background-color': 'rgba(0, 0, 0, 0.3)'
+                                })
+                                .attr('data-modal-id', config.modalId)
+                                .appendTo('body');
+                        }
+
+                        if (typeof config.onShown === 'function') {
+                            config.onShown(modalInstance, $modal);
+                        }
+
+                        resolve({ modal: modalInstance, element: $modal[0] });
+                    });
+
+                    // ⭐ Event: hidden
+                    $modal.on('hidden.bs.modal', function () {
+                        console.log('🔄 Nested modal hidden:', config.modalId);
+
+                        // ⭐ حذف backdrop شفاف
+                        $(`.nested-backdrop[data-modal-id="${config.modalId}"]`).remove();
+
+                        if (typeof config.onHidden === 'function') {
+                            config.onHidden(modalInstance, $modal);
+                        }
+
+                        if (config.removeOnHide) {
+                            $modal.remove();
+                        }
+                    });
+
+                } catch (processError) {
+                    console.error('❌ Error processing nested modal:', processError);
+                    $modal.remove();
+
+                    if (typeof config.onLoadError === 'function') {
+                        config.onLoadError(processError);
+                    } else if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'خطا در بارگذاری محتوا',
+                            text: processError.message,
+                            icon: 'error',
+                            confirmButtonText: 'باشه'
+                        });
+                    } else {
+                        alert('خطا: ' + processError.message);
+                    }
+
+                    reject(processError);
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error('❌ AJAX Error (nested modal):', {
+                    status: jqXHR.status,
+                    statusText: jqXHR.statusText,
+                    error: errorThrown
+                });
+
+                $modal.remove();
+
+                const errorMessage = (typeof getAjaxErrorMessage === 'function') 
+                    ? getAjaxErrorMessage(jqXHR)
+                    : `خطا در بارگذاری: ${jqXHR.status} - ${jqXHR.statusText}`;
+
+                if (typeof config.onLoadError === 'function') {
+                    config.onLoadError(new Error(errorMessage));
+                } else if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'خطا در بارگذاری',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: 'باشه',
+                        footer: `کد خطا: ${jqXHR.status || 'نامشخص'}`
+                    });
+                } else {
+                    alert(errorMessage);
+                }
+
+                reject(new Error(errorMessage));
+            }
+        });
+    });
+}
+
+/**
+ * ⭐ Setup form submission handler for modal
+ * این تابع برای هر دو نوع modal (عادی و nested) کار می‌کند
+ */
+function setupModalFormHandler($modal, config, modalInstance) {
+    const $form = $modal.find('form');
+
+    if (!$form.length) {
+        console.log('ℹ️ No form found in modal');
+        return;
+    }
+
+    console.log('📝 Setting up form handler for modal:', config.modalId);
+
+    // Prevent default form submission
+    $form.on('submit', function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const submitUrl = $(this).attr('action') || config.url;
+
+        console.log('📤 Submitting form to:', submitUrl);
+
+        $.ajax({
+            url: submitUrl,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                console.log('✅ Form submission response:', response);
+
+                if (response.status === 'success' || response.success) {
+                    // موفقیت
+                    if (typeof config.onSubmitSuccess === 'function') {
+                        config.onSubmitSuccess(response, modalInstance);
+                    }
+
+                    // بستن modal
+                    modalInstance.hide();
+
+                    // نمایش پیام موفقیت
+                    if (response.message) {
+                        showSuccessMessage(response.message);
+                    }
+                } else if (response.status === 'update-view') {
+                    // بروزرسانی view
+                    if (response.viewList) {
+                        response.viewList.forEach(item => {
+                            $(item.elementId).html(item.view.result);
+                        });
+                    }
+                } else {
+                    // خطا
+                    if (response.message) {
+                        showErrorMessage(response.message);
+                    }
+                }
+            },
+            error: function (xhr) {
+                console.error('❌ Form submission error:', xhr);
+                showErrorMessage('خطا در ارسال فرم');
+            }
+        });
+    });
+}

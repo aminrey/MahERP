@@ -1,0 +1,259 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.StakeholderInteractionPageViewModel
+
+@if (Model.ContactId.HasValue || Model.OrganizationId.HasValue)
+{
+    <!-- اطلاعات Stakeholder -->
+    <div class="block block-rounded">
+        <div class="block-header block-header-default @(Model.StakeholderType == MahERP.DataModelLayer.ViewModels.CrmViewModels.StakeholderType.Contact ? "bg-primary" : "bg-success")">
+            <h3 class="block-title text-white">
+                @if (Model.StakeholderType == MahERP.DataModelLayer.ViewModels.CrmViewModels.StakeholderType.Contact)
+                {
+                    <i class="fa fa-user me-1"></i>
+                    @Model.ContactName
+                    <span class="badge bg-white text-primary ms-2">@Model.ContactTypeName</span>
+                }
+                else
+                {
+                    <i class="fa fa-building me-1"></i>
+                    @Model.OrganizationName
+                }
+            </h3>
+            <div class="block-options">
+                <a asp-action="Create" asp-controller="Interaction" asp-area="CrmArea"
+                   asp-route-contactId="@Model.ContactId" asp-route-organizationId="@Model.OrganizationId"
+                   class="btn btn-sm btn-alt-success">
+                    <i class="fa fa-plus me-1"></i>
+                    ثبت تعامل
+                </a>
+            </div>
+        </div>
+        <div class="block-content block-content-full bg-body-light">
+            <div class="row text-center">
+                <div class="col-4">
+                    <div class="fs-2 fw-semibold text-primary">@Model.TotalInteractionsCount</div>
+                    <div class="small text-muted">کل تعاملات</div>
+                </div>
+                <div class="col-4">
+                    <div class="fs-2 fw-semibold text-success">@Model.ActiveGoalsCount</div>
+                    <div class="small text-muted">اهداف فعال</div>
+                </div>
+                <div class="col-4">
+                    <div class="small fw-semibold">@(Model.LastInteractionDatePersian ?? "-")</div>
+                    <div class="small text-muted">آخرین تعامل</div>
+                </div>
+            </div>
+            
+            @if (Model.StakeholderType == MahERP.DataModelLayer.ViewModels.CrmViewModels.StakeholderType.Contact)
+            {
+                <div class="row mt-3 small">
+                    @if (!string.IsNullOrEmpty(Model.ContactPhone))
+                    {
+                        <div class="col-6">
+                            <i class="fa fa-phone text-muted me-1"></i>
+                            @Model.ContactPhone
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.ContactEmail))
+                    {
+                        <div class="col-6">
+                            <i class="fa fa-envelope text-muted me-1"></i>
+                            @Model.ContactEmail
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="row mt-3 small">
+                    @if (!string.IsNullOrEmpty(Model.OrganizationPhone))
+                    {
+                        <div class="col-6">
+                            <i class="fa fa-phone text-muted me-1"></i>
+                            @Model.OrganizationPhone
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.OrganizationAddress))
+                    {
+                        <div class="col-6">
+                            <i class="fa fa-map-marker-alt text-muted me-1"></i>
+                            @Model.OrganizationAddress
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- تعاملات -->
+    @if (Model.HasGoals)
+    {
+        <!-- اگر هدف دارد: نمایش Tab ها -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-bullseye me-1"></i>
+                    تعاملات بر اساس هدف
+                </h3>
+            </div>
+            <div class="block-content">
+                <!-- Tab Navigation -->
+                <ul class="nav nav-tabs nav-tabs-alt" id="goalsTab" role="tablist">
+                    @for (int i = 0; i < Model.Goals.Count; i++)
+                    {
+                        var goal = Model.Goals[i];
+                        var isFirst = i == 0;
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(isFirst ? "active" : "")" 
+                                    id="goal-tab-@goal.Id" 
+                                    data-bs-toggle="tab" 
+                                    data-bs-target="#goal-panel-@goal.Id" 
+                                    type="button" 
+                                    role="tab"
+                                    onclick="loadGoalInteractions(@goal.Id, 1)">
+                                <span class="badge me-1" style="background-color: @(goal.LeadStageColor ?? "#6c757d")">
+                                    @goal.InteractionsCount
+                                </span>
+                                @goal.Title
+                                @if (goal.IsConverted)
+                                {
+                                    <i class="fa fa-check-circle text-success ms-1" title="تبدیل شده"></i>
+                                }
+                            </button>
+                        </li>
+                    }
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content pt-3" id="goalsTabContent">
+                    @for (int i = 0; i < Model.Goals.Count; i++)
+                    {
+                        var goal = Model.Goals[i];
+                        var isFirst = i == 0;
+                        <div class="tab-pane fade @(isFirst ? "show active" : "")" 
+                             id="goal-panel-@goal.Id" 
+                             role="tabpanel">
+                            
+                            <!-- فیلتر -->
+                            <div class="row mb-3 g-2">
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control form-control-sm" placeholder="جستجو..." 
+                                           id="goalSearch_@goal.Id" />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="text" class="form-control form-control-sm js-flatpickr" placeholder="از تاریخ" 
+                                           id="goalFromDate_@goal.Id" readonly />
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="text" class="form-control form-control-sm js-flatpickr" placeholder="تا تاریخ" 
+                                           id="goalToDate_@goal.Id" readonly />
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm btn-alt-secondary w-100" 
+                                            onclick="filterGoalInteractions(@goal.Id)">
+                                        <i class="fa fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- لیست تعاملات -->
+                            <div id="goalInteractionsContainer_@goal.Id">
+                                @if (isFirst)
+                                {
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status"></div>
+                                        <p class="mt-2 text-muted small">در حال بارگذاری...</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- اگر هدف ندارد: لیست ساده -->
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-list me-1"></i>
+                    لیست تعاملات
+                </h3>
+            </div>
+            <div class="block-content">
+                <!-- فیلتر -->
+                <div class="row mb-3 g-2">
+                    <div class="col-md-3">
+                        <input type="text" class="form-control form-control-sm" placeholder="جستجو..." id="contactSearch" />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" class="form-control form-control-sm js-flatpickr" placeholder="از تاریخ" id="contactFromDate" readonly />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" class="form-control form-control-sm js-flatpickr" placeholder="تا تاریخ" id="contactToDate" readonly />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-sm btn-alt-secondary w-100" onclick="filterContactInteractions()">
+                            <i class="fa fa-filter"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- لیست تعاملات -->
+                <div id="contactInteractionsContainer">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted small">در حال بارگذاری...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="block block-rounded">
+        <div class="block-content text-center py-5">
+            <i class="fa fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+            <h4 class="text-muted">مخاطب یافت نشد</h4>
+        </div>
+    </div>
+}
+
+<script>
+    $(document).ready(function() {
+        // Initialize Persian Datepickers
+        if (typeof $.fn.persianDatepicker !== 'undefined') {
+            $('.js-flatpickr').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true
+            });
+        }
+        
+        @if (Model.HasGoals && Model.Goals.Any())
+        {
+            <text>
+            // Load first goal's interactions
+            loadGoalInteractions(@Model.Goals.First().Id, 1);
+            </text>
+        }
+        else if (Model.ContactId.HasValue)
+        {
+            <text>
+            // Load contact interactions
+            loadContactInteractions(@Model.ContactId.Value, 1);
+            </text>
+        }
+    });
+
+    function filterGoalInteractions(goalId) {
+        // Implement filter logic
+        loadGoalInteractions(goalId, 1);
+    }
+
+    function filterContactInteractions() {
+        var contactId = @(Model.ContactId ?? 0);
+        loadContactInteractions(contactId, 1);
+    }
+</script>

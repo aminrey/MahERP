@@ -1,0 +1,126 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.StakeholderInteractionsViewModel
+
+@if (Model.Interactions.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-hover table-vcenter mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 100px">تاریخ</th>
+                    <th style="width: 120px">نوع تعامل</th>
+                    <th>موضوع</th>
+                    <th style="width: 150px">اهداف مرتبط</th>
+                    <th style="width: 100px">کاربر</th>
+                    <th style="width: 80px" class="text-center">عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Interactions)
+                {
+                    <tr>
+                        <td>
+                            <span class="fw-semibold">@item.InteractionDatePersian</span>
+                            <br />
+                            <small class="text-muted">@item.InteractionTime</small>
+                        </td>
+                        <td>
+                            <span class="badge" style="background-color: @(item.InteractionTypeColor ?? "#6c757d")">
+                                @item.InteractionTypeName
+                            </span>
+                            @if (!string.IsNullOrEmpty(item.LeadStageName))
+                            {
+                                <br />
+                                <small class="badge mt-1" style="background-color: @(item.LeadStageColor ?? "#6c757d")">
+                                    @item.LeadStageName
+                                </small>
+                            }
+                        </td>
+                        <td>
+                            <div class="fw-semibold">@item.Subject</div>
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <small class="text-muted">
+                                    @(item.Description.Length > 80 ? item.Description.Substring(0, 80) + "..." : item.Description)
+                                </small>
+                            }
+                        </td>
+                        <td>
+                            @if (item.Goals.Any())
+                            {
+                                <div class="small">
+                                    @foreach (var goal in item.Goals.Take(2))
+                                    {
+                                        <span class="badge bg-info me-1 mb-1">@goal.Title</span>
+                                    }
+                                    @if (item.Goals.Count > 2)
+                                    {
+                                        <span class="badge bg-secondary">+@(item.Goals.Count - 2)</span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">-</span>
+                            }
+                        </td>
+                        <td>
+                            <small>@item.CreatorName</small>
+                        </td>
+                        <td class="text-center">
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-alt-primary" title="مشاهده جزئیات">
+                                <i class="fa fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="mt-3">
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                @{
+                    var contactId = Model.ContactId ?? 0;
+                    var orgId = Model.OrganizationId ?? 0;
+                }
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                        @if (Model.ContactId.HasValue)
+                        {
+                            <button type="button" class="page-link" onclick="loadContactInteractions(@contactId, @i)">
+                                @i
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="page-link" onclick="loadOrganizationInteractions(@orgId, @i)">
+                                @i
+                            </button>
+                        }
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+    
+    <div class="text-muted small text-center mt-2">
+        نمایش @Model.Interactions.Count از @Model.TotalCount تعامل
+    </div>
+}
+else
+{
+    <div class="text-center py-4">
+        <i class="fa fa-inbox fa-2x text-muted mb-2"></i>
+        <p class="text-muted mb-0">هیچ تعاملی ثبت نشده</p>
+        <a asp-action="Create" asp-controller="Interaction" asp-area="CrmArea" 
+           asp-route-contactId="@Model.ContactId" asp-route-organizationId="@Model.OrganizationId"
+           class="btn btn-sm btn-primary mt-2">
+            <i class="fa fa-plus me-1"></i>
+            ثبت اولین تعامل
+        </a>
+    </div>
+}

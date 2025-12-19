@@ -1,0 +1,57 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.CrmViewModels.GoalViewModel>
+
+@if (Model.Any())
+{
+    @foreach (var goal in Model)
+    {
+        <tr class="goal-row">
+            <td class="text-center">
+                <input class="form-check-input goal-checkbox" 
+                       type="checkbox" 
+                       name="GoalIds" 
+                       value="@goal.Id" 
+                       id="goal_@goal.Id" />
+            </td>
+            <td>
+                <label class="fw-semibold mb-0 d-block" for="goal_@goal.Id" style="cursor: pointer;">
+                    <i class="fa fa-bullseye fa-fw text-primary me-1"></i>
+                    @goal.Title
+                </label>
+            </td>
+            <td>
+                @if (!string.IsNullOrEmpty(goal.ProductName))
+                {
+                    <small class="text-muted">
+                        <i class="fa fa-box fa-fw me-1"></i>
+                        @goal.ProductName
+                    </small>
+                }
+                else
+                {
+                    <small class="text-muted">-</small>
+                }
+            </td>
+            <td class="text-center">
+                @if (!string.IsNullOrEmpty(goal.CurrentLeadStageStatusTitle))
+                {
+                    <span class="badge" style="background-color: @(goal.CurrentLeadStageStatusColor ?? "#6c757d")">
+                        @goal.CurrentLeadStageStatusTitle
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">نامشخص</span>
+                }
+            </td>
+        </tr>
+    }
+}
+else
+{
+    <tr>
+        <td colspan="4" class="text-center py-4 text-muted">
+            <i class="fa fa-inbox fa-2x mb-2 d-block"></i>
+            <small>هیچ هدفی تعریف نشده</small>
+        </td>
+    </tr>
+}

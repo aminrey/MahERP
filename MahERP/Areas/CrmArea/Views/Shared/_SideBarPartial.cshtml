@@ -53,155 +53,21 @@
                     </a>
                 </li>
 
-                <!-- ============== 🎯 LEADS MANAGEMENT ============== -->
-                @if (Html.CanAccessAnyIn("CRM.LEAD"))
-                {
-                    <li class="nav-main-heading">مدیریت سرنخ‌ها</li>
-                    
-                    <li class="nav-main-item @(IsLeadsMenuActive(currentController) ? "open" : "")">
-                        <a aria-expanded="@(IsLeadsMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                            <i class="nav-main-link-icon fa fa-user-tag text-warning"></i>
-                            <span class="nav-main-link-name">سرنخ‌ها</span>
-                        </a>
-                        <ul class="nav-main-submenu">
-                            @if (Html.CanAccessAny("CRM.LEAD", "CRM.LEAD.VIEW"))
-                            {
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Leads", "Index") ? "active" : "")" asp-area="CrmArea" asp-controller="Leads" asp-action="Index">
-                                        <i class="nav-main-link-icon fa fa-list text-info"></i>
-                                        <span class="nav-main-link-name">لیست سرنخ‌ها</span>
-                                    </a>
-                                </li>
-                            }
-                            
-                            @if (Html.CanAccessAny("CRM.LEAD", "CRM.LEAD.CREATE"))
-                            {
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Leads", "Create") ? "active" : "")" asp-area="CrmArea" asp-controller="Leads" asp-action="Create">
-                                        <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
-                                        <span class="nav-main-link-name fw-semibold">سرنخ جدید</span>
-                                    </a>
-                                </li>
-                            }
-
-                            @if (Html.CanAccessAny("CRM.LEAD", "CRM.LEAD.STATUS"))
-                            {
-                                <li class="nav-main-item nav-submenu-separator mt-2">
-                                    <div class="nav-submenu-title">
-                                        <small class="text-muted fw-semibold">تنظیمات</small>
-                                    </div>
-                                </li>
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "LeadStatus", "Index") ? "active" : "")" asp-area="CrmArea" asp-controller="LeadStatus" asp-action="Index">
-                                        <i class="nav-main-link-icon fa fa-sliders-h text-secondary"></i>
-                                        <span class="nav-main-link-name">وضعیت‌های سرنخ</span>
-                                    </a>
-                                </li>
-                            }
-                        </ul>
-                    </li>
-                }
-
-                <!-- ============== 💰 PIPELINE & OPPORTUNITIES ============== -->
-                @if (Html.CanAccessAnyIn("CRM.PIPELINE", "CRM.OPPORTUNITY"))
-                {
-                    <li class="nav-main-heading">فرصت‌های فروش</li>
-                    
-                    <!-- Pipeline -->
-                    @if (Html.CanAccessAnyIn("CRM.PIPELINE"))
-                    {
-                        <li class="nav-main-item @(IsPipelineMenuActive(currentController) ? "open" : "")">
-                            <a aria-expanded="@(IsPipelineMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                                <i class="nav-main-link-icon fa fa-filter text-success"></i>
-                                <span class="nav-main-link-name">پایپ‌لاین فروش</span>
-                            </a>
-                            <ul class="nav-main-submenu">
-                                @if (Html.CanAccessAny("CRM.PIPELINE", "CRM.PIPELINE.VIEW"))
-                                {
-                                    <li class="nav-main-item">
-                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Pipeline", "Index") ? "active" : "")" asp-area="CrmArea" asp-controller="Pipeline" asp-action="Index">
-                                            <i class="nav-main-link-icon fa fa-list text-info"></i>
-                                            <span class="nav-main-link-name">لیست پایپ‌لاین‌ها</span>
-                                        </a>
-                                    </li>
-                                }
-                                
-                                @if (Html.CanAccessAny("CRM.PIPELINE", "CRM.PIPELINE.CREATE"))
-                                {
-                                    <li class="nav-main-item">
-                                        <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Pipeline", "Create") ? "active" : "")" asp-area="CrmArea" asp-controller="Pipeline" asp-action="Create">
-                                            <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
-                                            <span class="nav-main-link-name fw-semibold">پایپ‌لاین جدید</span>
-                                        </a>
-                                    </li>
-                                }
-                            </ul>
-                        </li>
-                    }
-
-                    <!-- Opportunities -->
-                    @if (Html.CanAccessAnyIn("CRM.OPPORTUNITY"))
-                    {
-                        <li class="nav-main-item @(IsOpportunityMenuActive(currentController) ? "open" : "")">
-                            <a aria-expanded="@(IsOpportunityMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                                <i class="nav-main-link-icon fa fa-hand-holding-usd text-warning"></i>
-                                <span class="nav-main-link-name">فرصت‌ها</span>
-                            </a>
-                            <ul class="nav-main-submenu">
-                                @if (Html.CanAccessAny("CRM.OPPORTUNITY", "CRM.OPPORTUNITY.VIEW"))
-                                {
-                                    <li class="nav-main-item">
-                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Opportunity", "Index") ? "active" : "")" asp-area="CrmArea" asp-controller="Opportunity" asp-action="Index">
-                                            <i class="nav-main-link-icon fa fa-list text-info"></i>
-                                            <span class="nav-main-link-name">همه فرصت‌ها</span>
-                                        </a>
-                                    </li>
-                                }
-                                
-                                @if (Html.CanAccessAny("CRM.OPPORTUNITY", "CRM.OPPORTUNITY.CREATE"))
-                                {
-                                    <li class="nav-main-item">
-                                        <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Opportunity", "Create") ? "active" : "")" asp-area="CrmArea" asp-controller="Opportunity" asp-action="Create">
-                                            <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
-                                            <span class="nav-main-link-name fw-semibold">فرصت جدید</span>
-                                        </a>
-                                    </li>
-                                }
-
-                                @if (Html.CanAccessAny("CRM.OPPORTUNITY", "CRM.OPPORTUNITY.VIEW"))
-                                {
-                                    <li class="nav-main-item nav-submenu-separator mt-2">
-                                        <div class="nav-submenu-title">
-                                            <small class="text-muted fw-semibold">نمای کانبان</small>
-                                        </div>
-                                    </li>
-                                    <li class="nav-main-item">
-                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Opportunity", "Kanban") ? "active" : "")" asp-area="CrmArea" asp-controller="Opportunity" asp-action="Kanban">
-                                            <i class="nav-main-link-icon fa fa-columns text-primary"></i>
-                                            <span class="nav-main-link-name">نمای کانبان</span>
-                                        </a>
-                                    </li>
-                                }
-                            </ul>
-                        </li>
-                    }
-                }
-
-                <!-- ============== 💼 CRM MANAGEMENT ============== -->
+                <!-- ============== 🤝 INTERACTIONS (تعاملات) ============== -->
                 @if (Html.CanAccessAnyIn("CRM"))
                 {
-                    <li class="nav-main-heading">مدیریت CRM</li>
+                    <li class="nav-main-heading">مدیریت تعاملات</li>
                     
-                    <li class="nav-main-item @(IsCRMMenuActive(currentController) ? "open" : "")">
-                        <a aria-expanded="@(IsCRMMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                            <i class="nav-main-link-icon fa fa-chart-line text-success"></i>
-                            <span class="nav-main-link-name">تعاملات CRM</span>
+                    <li class="nav-main-item @(IsInteractionMenuActive(currentController) ? "open" : "")">
+                        <a aria-expanded="@(IsInteractionMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                            <i class="nav-main-link-icon fa fa-comments text-primary"></i>
+                            <span class="nav-main-link-name">تعاملات</span>
                         </a>
                         <ul class="nav-main-submenu">
                             @if (Html.CanAccessAny("CRM", "CRM.VIEW"))
                             {
                                 <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CRM", "Index") ? "active" : "")" asp-area="CrmArea" asp-controller="CRM" asp-action="Index">
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Interaction", "Index") ? "active" : "")" asp-area="CrmArea" asp-controller="Interaction" asp-action="Index">
                                         <i class="nav-main-link-icon fa fa-list text-info"></i>
                                         <span class="nav-main-link-name">لیست تعاملات</span>
                                     </a>
@@ -211,24 +77,67 @@
                             @if (Html.CanAccessAny("CRM", "CRM.CREATE"))
                             {
                                 <li class="nav-main-item">
-                                    <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "CRM", "Create") ? "active" : "")" asp-area="CrmArea" asp-controller="CRM" asp-action="Create">
+                                    <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Interaction", "Create") ? "active" : "")" asp-area="CrmArea" asp-controller="Interaction" asp-action="Create">
                                         <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
-                                        <span class="nav-main-link-name fw-semibold">تعامل جدید</span>
+                                        <span class="nav-main-link-name fw-semibold">ثبت تعامل جدید</span>
                                     </a>
                                 </li>
                             }
+                        </ul>
+                    </li>
+                }
 
-                            @if (Html.CanAccessAny("CRM", "CRM.STATISTICS"))
+                <!-- ============== 🎯 GOALS (اهداف فروش) ============== -->
+                @if (Html.CanAccessAnyIn("CRM"))
+                {
+                    <li class="nav-main-heading">اهداف فروش</li>
+                    
+                    <li class="nav-main-item @(IsGoalMenuActive(currentController) ? "open" : "")">
+                        <a aria-expanded="@(IsGoalMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                            <i class="nav-main-link-icon fa fa-bullseye text-warning"></i>
+                            <span class="nav-main-link-name">اهداف</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                            @if (Html.CanAccessAny("CRM", "CRM.VIEW"))
                             {
-                                <li class="nav-main-item nav-submenu-separator mt-2">
-                                    <div class="nav-submenu-title">
-                                        <small class="text-muted fw-semibold">آمار و گزارشات</small>
-                                    </div>
-                                </li>
                                 <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CRM", "Statistics") ? "active" : "")" asp-area="CrmArea" asp-controller="CRM" asp-action="Statistics">
-                                        <i class="nav-main-link-icon fa fa-chart-pie text-primary"></i>
-                                        <span class="nav-main-link-name">آمار CRM</span>
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Goal", "Index") ? "active" : "")" asp-area="CrmArea" asp-controller="Goal" asp-action="Index">
+                                        <i class="nav-main-link-icon fa fa-list text-info"></i>
+                                        <span class="nav-main-link-name">لیست اهداف</span>
+                                    </a>
+                                </li>
+                            }
+                            
+                            @if (Html.CanAccessAny("CRM", "CRM.CREATE"))
+                            {
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "Goal", "Create") ? "active" : "")" asp-area="CrmArea" asp-controller="Goal" asp-action="Create">
+                                        <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
+                                        <span class="nav-main-link-name fw-semibold">هدف جدید</span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </li>
+                }
+
+                <!-- ============== 👥 REFERRALS (ارجاعات) ============== -->
+                @if (Html.CanAccessAnyIn("CRM"))
+                {
+                    <li class="nav-main-heading">ارجاعات</li>
+                    
+                    <li class="nav-main-item @(IsReferralMenuActive(currentController) ? "open" : "")">
+                        <a aria-expanded="@(IsReferralMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                            <i class="nav-main-link-icon fa fa-user-friends text-info"></i>
+                            <span class="nav-main-link-name">معرفی‌ها</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                            @if (Html.CanAccessAny("CRM", "CRM.VIEW"))
+                            {
+                                <li class="nav-main-item">
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Referral", "Index") ? "active" : "")" asp-area="CrmArea" asp-controller="Referral" asp-action="Index">
+                                        <i class="nav-main-link-icon fa fa-list text-info"></i>
+                                        <span class="nav-main-link-name">لیست ارجاعات</span>
                                     </a>
                                 </li>
                             }
@@ -374,30 +283,35 @@
                 {
                     <li class="nav-main-heading">تنظیمات CRM</li>
                     
-                    <li class="nav-main-item @(IsCrmSettingsMenuActive(currentController) ? "open" : "")">
-                        <a aria-expanded="@(IsCrmSettingsMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
-                            <i class="nav-main-link-icon fa fa-cog text-secondary"></i>
+                    <li class="nav-main-item @(IsSettingsMenuActive(currentController) ? "open" : "")">
+                        <a aria-expanded="@(IsSettingsMenuActive(currentController) ? "true" : "false")" aria-haspopup="true" class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                            <i class="nav-main-link-icon fa fa-cogs text-secondary"></i>
                             <span class="nav-main-link-name">تنظیمات</span>
                         </a>
                         <ul class="nav-main-submenu">
                             @if (Html.CanAccessAny("CRM.SETTINGS", "CRM.SETTINGS.VIEW"))
                             {
-                                <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CrmSettings", "Index") ? "active" : "")" asp-area="AppCoreArea" asp-controller="CrmSettings" asp-action="Index">
-                                        <i class="nav-main-link-icon fa fa-sliders-h text-primary"></i>
-                                        <span class="nav-main-link-name">تنظیمات کلی</span>
-                                    </a>
+                                <li class="nav-main-item nav-submenu-separator">
+                                    <div class="nav-submenu-title">
+                                        <small class="text-muted fw-semibold">مراحل</small>
+                                    </div>
                                 </li>
                                 <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CrmSettings", "LeadSources") ? "active" : "")" asp-area="AppCoreArea" asp-controller="CrmSettings" asp-action="LeadSources">
-                                        <i class="nav-main-link-icon fa fa-bullseye text-warning"></i>
-                                        <span class="nav-main-link-name">منابع سرنخ</span>
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "Stage", "Index") ? "active" : "")" asp-area="CrmArea" asp-controller="Stage" asp-action="Index">
+                                        <i class="nav-main-link-icon fa fa-layer-group text-primary"></i>
+                                        <span class="nav-main-link-name">مراحل قیف فروش</span>
                                     </a>
                                 </li>
+                                
+                                <li class="nav-main-item nav-submenu-separator mt-2">
+                                    <div class="nav-submenu-title">
+                                        <small class="text-muted fw-semibold">انواع تعامل</small>
+                                    </div>
+                                </li>
                                 <li class="nav-main-item">
-                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CrmSettings", "LostReasons") ? "active" : "")" asp-area="AppCoreArea" asp-controller="CrmSettings" asp-action="LostReasons">
-                                        <i class="nav-main-link-icon fa fa-times-circle text-danger"></i>
-                                        <span class="nav-main-link-name">دلایل از دست دادن</span>
+                                    <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "InteractionType", "Index") ? "active" : "")" asp-area="CrmArea" asp-controller="InteractionType" asp-action="Index">
+                                        <i class="nav-main-link-icon fa fa-tags text-info"></i>
+                                        <span class="nav-main-link-name">انواع تعامل</span>
                                     </a>
                                 </li>
                             }
@@ -428,13 +342,12 @@
         return currentController == targetController && currentAction == targetAction;
     }
 
-    public bool IsLeadsMenuActive(string currentController) => currentController == "Leads" || currentController == "LeadStatus";
-    public bool IsPipelineMenuActive(string currentController) => currentController == "Pipeline";
-    public bool IsOpportunityMenuActive(string currentController) => currentController == "Opportunity";
-    public bool IsCRMMenuActive(string currentController) => currentController == "CRM";
+    public bool IsInteractionMenuActive(string currentController) => currentController == "Interaction";
+    public bool IsGoalMenuActive(string currentController) => currentController == "Goal";
+    public bool IsReferralMenuActive(string currentController) => currentController == "Referral";
+    public bool IsSettingsMenuActive(string currentController) => currentController == "Stage" || currentController == "InteractionType";
     public bool IsSmsMenuActive(string currentController) => currentController == "SmsSend" || currentController == "SmsTemplate" || currentController == "SmsProvider";
     public bool IsEmailMenuActive(string currentController) => currentController == "EmailSend" || currentController == "EmailTemplate";
-    public bool IsCrmSettingsMenuActive(string currentController) => currentController == "CrmSettings";
 }
 
 <style>

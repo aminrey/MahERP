@@ -48,6 +48,55 @@ namespace MahERP.Areas.CrmArea.Controllers
         }
 
         /// <summary>
+        /// صفحه اصلی لیست همه ارجاعات
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Index(string? searchTerm = null, ReferralStatus? status = null, int page = 1, int pageSize = 20)
+        {
+            var referrals = await _referralRepo.GetAllAsync();
+
+            // فیلتر بر اساس وضعیت
+            if (status.HasValue)
+            {
+                referrals = referrals.Where(r => r.Status == status.Value).ToList();
+            }
+
+            // فیلتر بر اساس جستجو
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                referrals = referrals.Where(r => 
+                    (r.ReferrerContact?.FullName?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (r.ReferredContact?.FullName?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (r.Notes?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)
+                ).ToList();
+            }
+
+            // آمار
+            var allReferrals = await _referralRepo.GetAllAsync();
+            ViewBag.TotalCount = allReferrals.Count;
+            ViewBag.PendingCount = allReferrals.Count(r => r.Status == ReferralStatus.Pending);
+            ViewBag.SuccessfulCount = allReferrals.Count(r => r.Status == ReferralStatus.Successful);
+            ViewBag.FailedCount = allReferrals.Count(r => r.Status == ReferralStatus.Failed);
+
+            // فیلترهای فعلی
+            ViewBag.CurrentSearchTerm = searchTerm;
+            ViewBag.CurrentStatus = status;
+            ViewBag.CurrentPage = page;
+            ViewBag.PageSize = pageSize;
+            ViewBag.TotalPages = (int)Math.Ceiling((double)referrals.Count / pageSize);
+
+            // Pagination
+            var pagedReferrals = referrals
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var viewModel = pagedReferrals.Select(r => MapToViewModel(r)).ToList();
+
+            return View(viewModel);
+        }
+
+        /// <summary>
         /// لیست ارجاعات یک مشتری (چه کسانی را معرفی کرده)
         /// </summary>
         [HttpGet]
@@ -63,12 +112,13 @@ namespace MahERP.Areas.CrmArea.Controllers
             var referrals = await _referralRepo.GetByReferrerAsync(contactId);
 
             ViewBag.Contact = contact;
+            ViewBag.ContactId = contactId;
             ViewBag.ContactName = contact.FullName;
             ViewBag.IsReferrer = true;
 
             var viewModel = referrals.Select(r => MapToViewModel(r)).ToList();
 
-            return View("Index", viewModel);
+            return View("ByContact", viewModel);
         }
 
         /// <summary>
@@ -87,12 +137,13 @@ namespace MahERP.Areas.CrmArea.Controllers
             var referrals = await _referralRepo.GetByReferredAsync(contactId);
 
             ViewBag.Contact = contact;
+            ViewBag.ContactId = contactId;
             ViewBag.ContactName = contact.FullName;
             ViewBag.IsReferrer = false;
 
             var viewModel = referrals.Select(r => MapToViewModel(r)).ToList();
 
-            return View("Index", viewModel);
+            return View("ByContact", viewModel);
         }
 
         /// <summary>
@@ -105,7 +156,7 @@ namespace MahERP.Areas.CrmArea.Controllers
             if (referral == null)
             {
                 TempData["ErrorMessage"] = "ارجاع یافت نشد";
-                return RedirectToAction("Index", "Dashboard");
+                return RedirectToAction(nameof(Index));
             }
 
             var viewModel = MapToViewModel(referral);
@@ -166,7 +217,7 @@ namespace MahERP.Areas.CrmArea.Controllers
             if (referrerContactId.HasValue)
                 return RedirectToAction(nameof(ByReferrer), new { contactId = referrerContactId });
 
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToAction(nameof(Index));
         }
 
         #region Private Methods

@@ -1,0 +1,161 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.GoalCreateViewModel
+@{
+    var returnUrl = ViewBag.ReturnUrl as string;
+}
+
+<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+        <form id="quickGoalForm" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ContactId" value="@Model.ContactId" />
+            <input type="hidden" name="OrganizationId" value="@Model.OrganizationId" />
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            
+            <div class="modal-header bg-primary">
+                <h5 class="modal-title text-white">
+                    <i class="fa fa-plus-circle me-1"></i>
+                    ایجاد هدف سریع
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-1"></i>
+                    برای ثبت تعامل، حداقل یک هدف لازم است. لطفاً هدف مورد نظر را تعریف کنید.
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        عنوان هدف <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" name="Title" class="form-control" placeholder="مثال: فروش محصول X" required autofocus />
+                    <small class="text-muted">هدف اصلی از این ارتباط چیست؟</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">محصول/خدمت</label>
+                    <input type="text" name="ProductName" class="form-control" placeholder="نام محصول یا خدمت مورد نظر" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">ارزش تخمینی (تومان)</label>
+                    <input type="text" 
+                           id="estimatedValueInput" 
+                           class="form-control money-input" 
+                           placeholder="0" 
+                           data-raw-value="0" />
+                    <input type="hidden" name="EstimatedValue" id="estimatedValueHidden" value="0" />
+                    <small class="text-muted">ارزش تخمینی این هدف به تومان</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">توضیحات</label>
+                    <textarea name="Description" class="form-control" rows="2" placeholder="جزئیات بیشتر درباره این هدف..."></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" class="btn btn-primary" id="submitQuickGoalBtn">
+                    <i class="fa fa-check me-1"></i>
+                    ایجاد و ادامه
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // ⭐ جداکننده 3 رقمی برای ورودی قیمت
+        $('#estimatedValueInput').on('input', function() {
+            let value = $(this).val().replace(/,/g, ''); // حذف کاماها
+            
+            // فقط اعداد مجاز
+            value = value.replace(/[^0-9]/g, '');
+            
+            // ذخیره مقدار خام
+            $(this).data('raw-value', value);
+            $('#estimatedValueHidden').val(value);
+            
+            // فرمت با جداکننده
+            if (value) {
+                const formatted = parseInt(value).toLocaleString('en-US');
+                $(this).val(formatted);
+            } else {
+                $(this).val('');
+            }
+        });
+
+        // دکمه ثبت
+        $('#submitQuickGoalBtn').on('click', function() {
+            submitQuickGoal();
+        });
+    });
+
+    function submitQuickGoal() {
+        const $form = $('#quickGoalForm');
+        const $btn = $('#submitQuickGoalBtn');
+        const originalText = $btn.html();
+        
+        // Validation
+        if (!$form[0].checkValidity()) {
+            $form[0].reportValidity();
+            return;
+        }
+        
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> در حال ثبت...');
+        
+        $.ajax({
+            url: '@Url.Action("CreateQuick", "Goal", new { area = "CrmArea" })',
+            type: 'POST',
+            data: $form.serialize(),
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    // بستن modal
+                    $('.modal').modal('hide');
+                    
+                    // بروزرسانی لیست اهداف
+                    if ($('#goalsListContainer').length > 0) {
+                        // اگر جدول وجود دارد
+                        if ($('#goalsTableBody').length > 0) {
+                            // حالت جدول (برای وقتی هدفی نداریم)
+                            $('#goalsTableBody').html(response.goalsHtml);
+                            $('#goalsListContainer').show();
+                        } else {
+                            // حالت عادی (جدول از قبل وجود دارد)
+                            $('#goalsListContainer tbody').html(response.goalsHtml);
+                        }
+                        
+                        // انتخاب خودکار هدف جدید
+                        $('#goal_' + response.goalId).prop('checked', true);
+                        
+                        // بروزرسانی تعداد اهداف در header
+                        var goalCount = $('.goal-checkbox').length;
+                        $('.block-title .badge').text(goalCount + ' هدف');
+                    }
+                    
+                    // نمایش پیام
+                    SendResposeMessage(response.message);
+                    
+                    // اگر ReturnUrl وجود داره و callback تعریف شده
+                    if (response.returnUrl && typeof window.onGoalCreated === 'function') {
+                        window.onGoalCreated(response.goalId, response.returnUrl);
+                    }
+                } else {
+                    $btn.prop('disabled', false).html(originalText);
+                    SendResposeMessage(response.message);
+                }
+            },
+            error: function(xhr) {
+                $btn.prop('disabled', false).html(originalText);
+                NotificationHelper.error('خطا در ایجاد هدف');
+            }
+        });
+    }
+</script>

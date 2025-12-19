@@ -1,0 +1,184 @@
+﻿@model MahERP.DataModelLayer.ViewModels.CrmViewModels.QuickAddContactViewModel
+@{
+    var branchName = ViewBag.BranchName as string;
+    var organizationName = ViewBag.OrganizationName as string;
+}
+
+<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+        <form id="quickAddContactForm" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="BranchId" value="@Model.BranchId" id="contactBranchId" />
+            <input type="hidden" asp-for="OrganizationId" value="@Model.OrganizationId" id="contactOrganizationId" />
+            
+            <div class="modal-header bg-primary">
+                <h5 class="modal-title text-white">
+                    <i class="fa fa-user-plus me-2"></i>
+                    افزودن سریع فرد
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- اطلاعات شعبه -->
+                <div class="alert alert-info d-flex align-items-center mb-3">
+                    <i class="fa fa-building fa-2x me-3"></i>
+                    <div>
+                        <strong>شعبه:</strong> @branchName
+                        @if (!string.IsNullOrEmpty(organizationName))
+                        {
+                            <br />
+                            <strong>سازمان:</strong> @organizationName
+                        }
+                    </div>
+                </div>
+
+                <!-- نام -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            نام
+                            <span class="text-muted small">(اختیاری)</span>
+                        </label>
+                        <input asp-for="FirstName" 
+                               class="form-control" 
+                               placeholder="نام" />
+                    </div>
+
+                    <!-- نام خانوادگی -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            نام خانوادگی
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="LastName" 
+                               class="form-control" 
+                               placeholder="نام خانوادگی" 
+                               required 
+                               autofocus />
+                        <span asp-validation-for="LastName" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <!-- شماره تماس -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        <i class="fa fa-phone me-1"></i>
+                        شماره تماس
+                        <span class="text-muted small">(اختیاری)</span>
+                    </label>
+                    <input asp-for="PhoneNumber" 
+                           type="tel"
+                           class="form-control" 
+                           placeholder="09123456789" 
+                           dir="ltr" />
+                    <small class="form-text text-muted">
+                        در صورت وارد کردن، به عنوان شماره پیش‌فرض ثبت می‌شود
+                    </small>
+                </div>
+
+                <!-- ایمیل -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        <i class="fa fa-envelope me-1"></i>
+                        ایمیل
+                        <span class="text-muted small">(اختیاری)</span>
+                    </label>
+                    <input asp-for="Email" 
+                           type="email"
+                           class="form-control" 
+                           placeholder="email@example.com" 
+                           dir="ltr" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" class="btn btn-primary" id="btnSubmitContact">
+                    <i class="fa fa-check me-1"></i>
+                    ذخیره و انتخاب
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // فقط اعداد برای شماره تماس
+        $('#PhoneNumber').on('input', function() {
+            let value = $(this).val().replace(/[^0-9]/g, '');
+            $(this).val(value);
+        });
+
+        // Submit
+        $('#btnSubmitContact').on('click', function() {
+            submitQuickAddContact();
+        });
+
+        // Focus
+        $('#LastName').focus();
+    });
+
+    function submitQuickAddContact() {
+        const $form = $('#quickAddContactForm');
+        const $btn = $('#btnSubmitContact');
+        const originalText = $btn.html();
+        
+        // Validation
+        if (!$form[0].checkValidity()) {
+            $form[0].reportValidity();
+            return;
+        }
+        
+        // ⭐⭐⭐ اطمینان از وجود BranchId
+        const branchId = $('#contactBranchId').val();
+        if (!branchId || branchId === '0') {
+            alert('خطا: شناسه شعبه یافت نشد. لطفاً دوباره تلاش کنید.');
+            return;
+        }
+        
+        console.log('📤 Submitting contact with BranchId:', branchId);
+        
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> در حال ذخیره...');
+        
+        $.ajax({
+            url: '@Url.Action("CreateContact", "QuickAdd", new { area = "CrmArea" })',
+            type: 'POST',
+            data: $form.serialize(),
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    // بستن modal
+                    $('.modal').modal('hide');
+                    
+                    // نمایش پیام
+                    SendResposeMessage([{ status: 'success', text: response.message }]);
+                    
+                    // Callback به صفحه اصلی
+                    if (typeof window.onQuickAddComplete === 'function') {
+                        window.onQuickAddComplete('contact', response);
+                    }
+                } else {
+                    $btn.prop('disabled', false).html(originalText);
+                    SendResposeMessage([{ status: 'error', text: response.message }]);
+                }
+            },
+            error: function(xhr) {
+                $btn.prop('disabled', false).html(originalText);
+                NotificationHelper.error('خطا در ایجاد فرد');
+            }
+        });
+    }
+</script>
+
+<style>
+    input[dir="ltr"] {
+        text-align: left;
+        font-family: 'Courier New', monospace;
+    }
+</style>
