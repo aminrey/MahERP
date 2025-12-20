@@ -2,8 +2,7 @@
 
 <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <div class="modal-content">
-        <form asp-action="Create" method="post">
-            @Html.AntiForgeryToken()
+        <form asp-area="CrmArea" asp-controller="InteractionType" asp-action="Create" method="post">
             
             <div class="modal-header bg-primary">
                 <h5 class="modal-title text-white">

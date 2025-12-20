@@ -507,10 +507,8 @@ function createAndShowNestedModal(urlOrOptions, options = {}) {
 
                     modalInstance.show();
 
-                    // ⭐ Setup form handler
-                    if (typeof setupModalFormHandler === 'function') {
-                        setupModalFormHandler($modal, config, modalInstance);
-                    }
+                    // ⭐⭐⭐ حذف setupModalFormHandler - از document-level handler در main.js استفاده می‌شود
+                    // setupModalFormHandler فقط تداخل ایجاد می‌کند
 
                     // ⭐ Event: shown
                     $modal.on('shown.bs.modal', function () {
@@ -606,69 +604,5 @@ function createAndShowNestedModal(urlOrOptions, options = {}) {
     });
 }
 
-/**
- * ⭐ Setup form submission handler for modal
- * این تابع برای هر دو نوع modal (عادی و nested) کار می‌کند
- */
-function setupModalFormHandler($modal, config, modalInstance) {
-    const $form = $modal.find('form');
-
-    if (!$form.length) {
-        console.log('ℹ️ No form found in modal');
-        return;
-    }
-
-    console.log('📝 Setting up form handler for modal:', config.modalId);
-
-    // Prevent default form submission
-    $form.on('submit', function (e) {
-        e.preventDefault();
-
-        const formData = new FormData(this);
-        const submitUrl = $(this).attr('action') || config.url;
-
-        console.log('📤 Submitting form to:', submitUrl);
-
-        $.ajax({
-            url: submitUrl,
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function (response) {
-                console.log('✅ Form submission response:', response);
-
-                if (response.status === 'success' || response.success) {
-                    // موفقیت
-                    if (typeof config.onSubmitSuccess === 'function') {
-                        config.onSubmitSuccess(response, modalInstance);
-                    }
-
-                    // بستن modal
-                    modalInstance.hide();
-
-                    // نمایش پیام موفقیت
-                    if (response.message) {
-                        showSuccessMessage(response.message);
-                    }
-                } else if (response.status === 'update-view') {
-                    // بروزرسانی view
-                    if (response.viewList) {
-                        response.viewList.forEach(item => {
-                            $(item.elementId).html(item.view.result);
-                        });
-                    }
-                } else {
-                    // خطا
-                    if (response.message) {
-                        showErrorMessage(response.message);
-                    }
-                }
-            },
-            error: function (xhr) {
-                console.error('❌ Form submission error:', xhr);
-                showErrorMessage('خطا در ارسال فرم');
-            }
-        });
-    });
-}
+// ⭐ Expose به window برای استفاده global
+window.createAndShowNestedModal = createAndShowNestedModal;

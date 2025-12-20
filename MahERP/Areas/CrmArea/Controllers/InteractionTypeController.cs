@@ -92,7 +92,6 @@ namespace MahERP.Areas.CrmArea.Controllers
         /// ایجاد نوع تعامل جدید
         /// </summary>
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(InteractionTypeViewModel model)
         {
             if (string.IsNullOrWhiteSpace(model.Title))
@@ -122,9 +121,9 @@ namespace MahERP.Areas.CrmArea.Controllers
                 await _interactionTypeRepo.CreateAsync(interactionType);
 
                 return Json(new { 
-                    status = "success", 
+                    status = "redirect", 
                     message = new[] { new { status = "success", text = "نوع تعامل با موفقیت ایجاد شد" } },
-                    id = interactionType.Id
+                    redirectUrl = Url.Action("Index", "InteractionType", new { area = "CrmArea" })
                 });
             }
             catch (Exception ex)
