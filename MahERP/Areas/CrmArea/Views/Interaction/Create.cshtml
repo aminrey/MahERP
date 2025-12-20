@@ -31,16 +31,6 @@
 
 <!-- Page Content -->
 <div class="content content-full">
-    <!-- ⭐⭐⭐ DEBUG INFO (Remove in production) -->
-    <div class="alert alert-info" style="display: none;" id="debugInfo">
-        <strong>🔍 Debug Info:</strong><br>
-        Model.BranchId: @(Model.BranchId?.ToString() ?? "null")<br>
-        ViewBag.DefaultBranchId: @(ViewBag.DefaultBranchId?.ToString() ?? "null")<br>
-        Model.ContactId: @Model.ContactId<br>
-        Model.OrganizationId: @(Model.OrganizationId?.ToString() ?? "null")<br>
-        Hidden Input Value: <span id="hiddenBranchValue"></span>
-    </div>
-    
     <form asp-action="Create" method="post" id="interactionForm">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="BranchId" id="selectedBranchId" value="@(Model.BranchId ?? ViewBag.DefaultBranchId ?? 0)" />

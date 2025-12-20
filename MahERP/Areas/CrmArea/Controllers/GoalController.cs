@@ -130,7 +130,7 @@ namespace MahERP.Areas.CrmArea.Controllers
         }
 
         /// <summary>
-        /// دریافت 10 هدف اخیر (Sidebar)
+        /// دریافت 10 هدف recent (Sidebar)
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetRecentGoals()
@@ -258,6 +258,32 @@ namespace MahERP.Areas.CrmArea.Controllers
                 return View(model);
             }
 
+            // Validate ContactId if provided
+            if (model.ContactId.HasValue && model.ContactId.Value > 0)
+            {
+                var contact = await _contactRepo.GetByIdAsync(model.ContactId.Value);
+                if (contact == null)
+                {
+                    ModelState.AddModelError("", "فرد انتخاب شده یافت نشد");
+                    return View(model);
+                }
+            }
+            
+            // Validate OrganizationId if provided
+            if (model.OrganizationId.HasValue && model.OrganizationId.Value > 0)
+            {
+                var organization = await _organizationRepo.GetOrganizationByIdAsync(model.OrganizationId.Value);
+                if (organization == null)
+                {
+                    ModelState.AddModelError("", "سازمان انتخاب شده یافت نشد");
+                    return View(model);
+                }
+            }
+
+            // Set to null if invalid values (0 or negative)
+            var validContactId = (model.ContactId.HasValue && model.ContactId.Value > 0) ? model.ContactId : null;
+            var validOrganizationId = (model.OrganizationId.HasValue && model.OrganizationId.Value > 0) ? model.OrganizationId : null;
+
             var userId = _userManager.GetUserId(User);
 
             var goal = new Goal
@@ -265,8 +291,8 @@ namespace MahERP.Areas.CrmArea.Controllers
                 Title = model.Title,
                 Description = model.Description,
                 ProductName = model.ProductName,
-                ContactId = model.ContactId,
-                OrganizationId = model.OrganizationId,
+                ContactId = validContactId,
+                OrganizationId = validOrganizationId,
                 EstimatedValue = model.EstimatedValue,
                 CreatorUserId = userId!
             };
@@ -275,10 +301,10 @@ namespace MahERP.Areas.CrmArea.Controllers
 
             TempData["SuccessMessage"] = "هدف با موفقیت ایجاد شد";
 
-            if (model.ContactId.HasValue)
-                return RedirectToAction(nameof(ByContact), new { contactId = model.ContactId });
+            if (validContactId.HasValue)
+                return RedirectToAction(nameof(ByContact), new { contactId = validContactId });
             else
-                return RedirectToAction(nameof(ByOrganization), new { organizationId = model.OrganizationId });
+                return RedirectToAction(nameof(ByOrganization), new { organizationId = validOrganizationId });
         }
 
         /// <summary>
@@ -409,8 +435,50 @@ namespace MahERP.Areas.CrmArea.Controllers
                 });
             }
 
+            // Validate that at least one of ContactId or OrganizationId is provided and valid
+            if (!model.ContactId.HasValue && !model.OrganizationId.HasValue)
+            {
+                return Json(new
+                {
+                    status = "error",
+                    message = new[] { new { status = "error", text = "هدف باید به یک فرد یا سازمان متصل باشد" } }
+                });
+            }
+
             try
             {
+                // Validate ContactId if provided
+                if (model.ContactId.HasValue && model.ContactId.Value > 0)
+                {
+                    var contact = await _contactRepo.GetByIdAsync(model.ContactId.Value);
+                    if (contact == null)
+                    {
+                        return Json(new
+                        {
+                            status = "error",
+                            message = new[] { new { status = "error", text = "فرد انتخاب شده یافت نشد" } }
+                        });
+                    }
+                }
+                
+                // Validate OrganizationId if provided
+                if (model.OrganizationId.HasValue && model.OrganizationId.Value > 0)
+                {
+                    var organization = await _organizationRepo.GetOrganizationByIdAsync(model.OrganizationId.Value);
+                    if (organization == null)
+                    {
+                        return Json(new
+                        {
+                            status = "error",
+                            message = new[] { new { status = "error", text = "سازمان انتخاب شده یافت نشد" } }
+                        });
+                    }
+                }
+                
+                // Set to null if invalid values (0 or negative)
+                var validContactId = (model.ContactId.HasValue && model.ContactId.Value > 0) ? model.ContactId : null;
+                var validOrganizationId = (model.OrganizationId.HasValue && model.OrganizationId.Value > 0) ? model.OrganizationId : null;
+
                 var userId = _userManager.GetUserId(User);
 
                 var goal = new Goal
@@ -418,8 +486,8 @@ namespace MahERP.Areas.CrmArea.Controllers
                     Title = model.Title,
                     Description = model.Description,
                     ProductName = model.ProductName,
-                    ContactId = model.ContactId,
-                    OrganizationId = model.OrganizationId,
+                    ContactId = validContactId,
+                    OrganizationId = validOrganizationId,
                     EstimatedValue = model.EstimatedValue,
                     CreatorUserId = userId!,
                     IsActive = true
@@ -429,13 +497,13 @@ namespace MahERP.Areas.CrmArea.Controllers
 
                 // دریافت لیست جدید اهداف برای بروزرسانی
                 List<Goal> goals;
-                if (model.ContactId.HasValue)
+                if (validContactId.HasValue)
                 {
-                    goals = await _goalRepo.GetByContactAsync(model.ContactId.Value);
+                    goals = await _goalRepo.GetByContactAsync(validContactId.Value);
                 }
-                else if (model.OrganizationId.HasValue)
+                else if (validOrganizationId.HasValue)
                 {
-                    goals = await _goalRepo.GetByOrganizationAsync(model.OrganizationId.Value);
+                    goals = await _goalRepo.GetByOrganizationAsync(validOrganizationId.Value);
                 }
                 else
                 {
@@ -465,10 +533,13 @@ namespace MahERP.Areas.CrmArea.Controllers
             }
             catch (Exception ex)
             {
+                // Log the full exception for debugging
+                var errorMessage = ex.InnerException?.Message ?? ex.Message;
+                
                 return Json(new
                 {
                     status = "error",
-                    message = new[] { new { status = "error", text = $"خطا در ایجاد هدف: {ex.Message}" } }
+                    message = new[] { new { status = "error", text = $"خطا در ایجاد هدف: {errorMessage}" } }
                 });
             }
         }
