@@ -829,7 +829,7 @@ $(document).on('click', '[data-toggle="modal-ajax"]', function (event) {
 window.createAndShowModal = createAndShowModal;
 window.loadScheduledTemplates = loadScheduledTemplates;
 window.selectTemplate = selectTemplate;
-
+window.ModalTrigger = ModalTrigger;
 /**
  * Helper function to trigger a modal
  * @param {HTMLElement} input - Element with href attribute

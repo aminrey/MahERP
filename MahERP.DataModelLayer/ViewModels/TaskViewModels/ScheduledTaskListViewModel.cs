@@ -9,6 +9,20 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
     /// </summary>
     public class ScheduledTaskListViewModel
     {
+        /// <summary>
+        /// تسک‌های زمان‌بندی شده که من سازنده‌شان هستم
+        /// </summary>
+        public List<ScheduledTaskCardViewModel> MyScheduledTasks { get; set; } = new();
+        
+        /// <summary>
+        /// تسک‌های زمان‌بندی شده که من عضو تیم هستم (فقط مشاهده)
+        /// </summary>
+        public List<ScheduledTaskCardViewModel> TeamScheduledTasks { get; set; } = new();
+        
+        /// <summary>
+        /// ⚠️ DEPRECATED: از MyScheduledTasks استفاده کنید
+        /// </summary>
+        [Obsolete("از MyScheduledTasks و TeamScheduledTasks استفاده کنید")]
         public List<ScheduledTaskCardViewModel> ScheduledTasks { get; set; } = new();
         
         public ScheduledTaskStatsViewModel Stats { get; set; } = new();
@@ -40,6 +54,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
             1 => "روزانه",
             2 => "هفتگی",
             3 => "ماهانه",
+            4 => "تکرار با فاصله", // ⭐⭐⭐ جدید
             _ => "نامشخص"
         };
         
@@ -100,7 +115,19 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         [Display(Name = "نام شعبه")]
         public string? BranchName { get; set; }
         
-        [Display(Name = "ایجاد کننده")]
+        [Display(Name = "کد تسک")]
+        public string? TaskCode { get; set; }
+        
+        [Display(Name = "اولویت")]
+        public byte Priority { get; set; }
+        
+        [Display(Name = "مهم")]
+        public bool Important { get; set; }
+        
+        [Display(Name = "نوع تسک")]
+        public byte TaskType { get; set; }
+        
+        [Display(Name = "نام کاربر ایجاد‌کننده")]
         public string CreatedByUserName { get; set; }
         
         [Display(Name = "تاریخ ایجاد")]
@@ -108,12 +135,12 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels.TaskViewMode
         
         [Display(Name = "تاریخ ایجاد (شمسی)")]
         public string CreatedDatePersian { get; set; }
-        
-        // ⭐ اطلاعات تسک
-        public string? TaskCode { get; set; }
-        public byte Priority { get; set; }
-        public bool Important { get; set; }
-        public byte TaskType { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW: آیا من سازنده این Schedule هستم؟
+        /// </summary>
+        [Display(Name = "سازنده من هستم")]
+        public bool IsCreatedByMe { get; set; }
         
         // ⭐ Badge Classes
         public string StatusBadgeClass => IsScheduleEnabled && IsActive 

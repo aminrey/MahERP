@@ -35,7 +35,28 @@ $(document).ready(function() {
         $('#scheduledDaysOfWeek').val(selectedDays.join(','));
         updateSchedulePreview();
         
-        console.log('📆 Selected days:', selectedDays);
+        console.log('📆 Selected week days:', selectedDays);
+    });
+
+    // ⭐⭐⭐ بروزرسانی چک‌باکس‌های روزهای ماه
+    $('input[name="dayOfMonth"]').on('change', function() {
+        const selectedDays = [];
+        $('input[name="dayOfMonth"]:checked').each(function() {
+            selectedDays.push($(this).val());
+        });
+        $('#scheduledDaysOfMonth').val(selectedDays.join(','));
+        updateSchedulePreview();
+        
+        console.log('📆 Selected month days:', selectedDays);
+    });
+
+    // ⭐⭐⭐ NEW: بروزرسانی رادیو باتن‌های روز هفته برای Interval
+    $('input[name="intervalDayOfWeekRadio"]').on('change', function() {
+        const selectedDay = $(this).val();
+        $('#intervalDayOfWeekHidden').val(selectedDay);
+        updateSchedulePreview();
+        
+        console.log('📆 Selected interval day of week:', selectedDay === '' ? 'Any day' : selectedDay);
     });
 
     // تغییر سایر فیلدها
@@ -56,7 +77,7 @@ function updateScheduleTypeOptions() {
     const scheduleType = parseInt($('#scheduleType').val());
     
     // پنهان کردن همه
-    $('#oneTimeOptions, #weeklyOptions, #monthlyOptions').hide();
+    $('#oneTimeOptions, #weeklyOptions, #monthlyOptions, #intervalOptions, #intervalDayOfWeekRow').hide();
     
     // نمایش بخش مربوطه
     switch(scheduleType) {
@@ -74,6 +95,11 @@ function updateScheduleTypeOptions() {
         case 3: // ماهانه
             $('#monthlyOptions').show();
             console.log('📆 Schedule type: Monthly');
+            break;
+        case 4: // ⭐⭐⭐ Interval
+            $('#intervalOptions').show();
+            $('#intervalDayOfWeekRow').show();
+            console.log('🔄 Schedule type: Interval');
             break;
     }
 }
@@ -97,7 +123,7 @@ function updateSchedulePreview() {
     let previewHtml = '<ul class="mb-0">';
 
     // نوع تکرار
-    const typeText = ['یکبار', 'روزانه', 'هفتگی', 'ماهانه'][scheduleType];
+    const typeText = ['یکبار', 'روزانه', 'هفتگی', 'ماهانه', 'تکرار با فاصله'][scheduleType];
     previewHtml += `<li><strong>نوع:</strong> ${typeText}`;
 
     // جزئیات بر اساس نوع
@@ -116,27 +142,51 @@ function updateSchedulePreview() {
             break;
             
         case 2: // هفتگی
-            const selectedDays = [];
+            const selectedWeekDays = [];
             const dayNames = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
             $('input[name="dayOfWeek"]:checked').each(function() {
-                selectedDays.push(dayNames[parseInt($(this).val())]);
+                selectedWeekDays.push(dayNames[parseInt($(this).val())]);
             });
-            if (selectedDays.length > 0 && scheduledTime) {
-                previewHtml += ` هر ${selectedDays.join('، ')} ساعت ${scheduledTime}`;
+            if (selectedWeekDays.length > 0 && scheduledTime) {
+                previewHtml += ` هر ${selectedWeekDays.join('، ')} ساعت ${scheduledTime}`;
             }
             break;
             
         case 3: // ماهانه
-            const dayOfMonth = $('input[name="TaskSchedule.ScheduledDayOfMonth"]').val();
-            if (dayOfMonth && scheduledTime) {
-                previewHtml += ` روز ${dayOfMonth} هر ماه ساعت ${scheduledTime}`;
+            // ⭐⭐⭐ FIX: بررسی چند روز یا یک روز
+            const selectedMonthDays = [];
+            $('input[name="dayOfMonth"]:checked').each(function() {
+                selectedMonthDays.push(parseInt($(this).val()));
+            });
+            
+            if (selectedMonthDays.length > 0 && scheduledTime) {
+                previewHtml += ` روزهای ${selectedMonthDays.sort((a, b) => a - b).join('، ')} هر ماه ساعت ${scheduledTime}`;
+            }
+            break;
+        
+        case 4: // ⭐⭐⭐ Interval
+            const intervalDays = $('input[name="TaskSchedule.IntervalDays"]').val();
+            const intervalDayOfWeek = $('input[name="intervalDayOfWeekRadio"]:checked').val();
+            
+            if (intervalDays && scheduledTime) {
+                previewHtml += ` هر ${intervalDays} روز ساعت ${scheduledTime}`;
+                
+                if (intervalDayOfWeek && intervalDayOfWeek !== '') {
+                    const dayNames = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+                    const dayName = dayNames[parseInt(intervalDayOfWeek)];
+                    previewHtml += ` (فقط ${dayName}ها)`;
+                }
+                
+                if (startDate) {
+                    previewHtml += ` از ${startDate}`;
+                }
             }
             break;
     }
     previewHtml += '</li>';
 
     // بازه زمانی
-    if (startDate) {
+    if (startDate && scheduleType !== 4) { // برای Interval قبلاً نمایش داده شد
         previewHtml += `<li><strong>شروع:</strong> ${startDate}</li>`;
     }
     if (endDate) {

@@ -10,6 +10,7 @@
         1 => "روزانه",
         2 => "هفتگی",
         3 => "ماهانه",
+        4 => "تکرار با فاصله", // ⭐⭐⭐ جدید
         _ => "نامشخص"
     };
 
@@ -19,6 +20,7 @@
         1 => "badge-success",
         2 => "badge-primary",
         3 => "badge-warning",
+        4 => "badge-secondary", // ⭐⭐⭐ جدید
         _ => "badge-secondary"
     };
 }
@@ -47,26 +49,39 @@
                             <i class="fas fa-eye me-2"></i>جزئیات
                         </a>
                     </li>
-                    <li>
-                        <a class="dropdown-item" href="@Url.Action("Edit", "ScheduledTasks", new { id = Model.Id })">
-                            <i class="fas fa-edit me-2"></i>ویرایش
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item" href="javascript:void(0)" 
-                           onclick="toggleScheduleStatus(@Model.Id)">
-                            <i class="fas fa-toggle-on me-2"></i>
-                            @(Model.IsScheduleEnabled ? "غیرفعال کردن" : "فعال کردن")
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item text-danger" href="javascript:void(0)" 
-                           onclick="deleteSchedule(@Model.Id)">
-                            <i class="fas fa-trash me-2"></i>حذف
-                        </a>
-                    </li>
+                    
+                    @* ⭐⭐⭐ فقط برای تسک‌هایی که من سازنده‌شان هستم *@
+                    @if (Model.IsCreatedByMe)
+                    {
+                        <li>
+                            <a class="dropdown-item" href="@Url.Action("Edit", "ScheduledTasks", new { id = Model.Id })">
+                                <i class="fas fa-edit me-2"></i>ویرایش
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="javascript:void(0)" 
+                               onclick="toggleScheduleStatus(@Model.Id)">
+                                <i class="fas fa-toggle-on me-2"></i>
+                                @(Model.IsScheduleEnabled ? "غیرفعال کردن" : "فعال کردن")
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="javascript:void(0)" 
+                               onclick="deleteSchedule(@Model.Id)">
+                                <i class="fas fa-trash me-2"></i>حذف
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-item-text text-muted small">
+                            <i class="fas fa-lock me-1"></i>
+                            فقط مشاهده (عضو تیم)
+                        </li>
+                    }
                 </ul>
             </div>
         </div>
@@ -103,9 +118,18 @@
 
             @if (Model.MaxOccurrences.HasValue)
             {
-                <span class="badge bg-info schedule-badge">
+                <span class="badge bg-info schedule-badge me-1">
                     <i class="fas fa-repeat me-1"></i>
                     @Model.ExecutionCount / @Model.MaxOccurrences
+                </span>
+            }
+            
+            @* ⭐⭐⭐ Badge برای تسک‌های تیمی *@
+            @if (!Model.IsCreatedByMe)
+            {
+                <span class="badge bg-info schedule-badge">
+                    <i class="fas fa-users me-1"></i>
+                    عضو تیم
                 </span>
             }
         </div>

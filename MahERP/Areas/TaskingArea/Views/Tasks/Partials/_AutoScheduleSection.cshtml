@@ -1,5 +1,8 @@
 ﻿@model TaskViewModel
 
+<!-- ⭐ استایل برای دکمه‌های Interval -->
+<link rel="stylesheet" href="~/css/tasks/interval-schedule.css" asp-append-version="true" />
+
 <!-- بخش زمان‌بندی خودکار تسک -->
 <div class="task-section mt-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -13,8 +16,9 @@
         <div class="form-check form-switch">
             <input class="form-check-input" 
                    type="checkbox" 
+                   asp-for="TaskSchedule.IsScheduled"
                    id="enableScheduleCheckbox"
-                   name="TaskSchedule.IsScheduled"
+            
                    style="width: 3rem; height: 1.5rem;">
             <label class="form-check-label text-white ms-2" for="enableScheduleCheckbox">
                 <strong>فعال‌سازی</strong>
@@ -43,6 +47,7 @@
                             <option value="1">روزانه (Daily)</option>
                             <option value="2">هفتگی (Weekly)</option>
                             <option value="3">ماهانه (Monthly)</option>
+                            <option value="4">⭐ تکرار با فاصله (Interval)</option>
                         </select>
                     </div>
                 </div>
@@ -117,6 +122,69 @@
                         <small class="form-text text-muted d-block mt-2">
                             <i class="fa fa-info-circle me-1"></i>
                             مثال: انتخاب روزهای 10، 20، 25 هر ماه
+                        </small>
+                    </div>
+
+                    <!-- ⭐⭐⭐ NEW: تنظیمات Interval -->
+                    <div class="col-md-6" id="intervalOptions" style="display: none;">
+                        <label class="form-label">
+                            فاصله زمانی (به روز) <span class="text-danger">*</span>
+                        </label>
+                        <input name="TaskSchedule.IntervalDays" 
+                               type="number" 
+                               min="1" 
+                               max="365" 
+                               class="form-control"
+                               placeholder="مثلاً 14">
+                        <small class="form-text text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            هر چند روز یکبار تسک ساخته شود (مثلاً هر 14 روز)
+                        </small>
+                    </div>
+                </div>
+
+                <!-- ⭐⭐⭐ NEW: انتخاب روز هفته با دکمه (مثل ماهانه) -->
+                <div class="row mb-3" id="intervalDayOfWeekRow" style="display: none;">
+                    <div class="col-12">
+                        <label class="form-label">
+                            محدود کردن به روز خاص هفته (اختیاری)
+                        </label>
+                        
+                        <!-- دکمه‌های انتخاب روز هفته -->
+                        <div class="btn-group w-100 mb-2 interval-days-group" role="group" style="flex-wrap: wrap;">
+                            <input type="radio" class="btn-check" name="intervalDayOfWeekRadio" value="" id="intervalDayAny" autocomplete="off" checked>
+                            <label class="btn btn-outline-secondary" for="intervalDayAny" style="flex: 0 0 12.5%;">
+                                <i class="fa fa-calendar me-1"></i><span class="d-none d-md-inline">هر روز</span><span class="d-md-none">همه</span>
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="intervalDayOfWeekRadio" value="6" id="intervalDaySaturday" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="intervalDaySaturday" style="flex: 0 0 12.5%;">شنبه</label>
+                            
+                            <input type="radio" class="btn-check" name="intervalDayOfWeekRadio" value="0" id="intervalDaySunday" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="intervalDaySunday" style="flex: 0 0 12.5%;">یکشنبه</label>
+                            
+                            <input type="radio" class="btn-check" name="intervalDayOfWeekRadio" value="1" id="intervalDayMonday" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="intervalDayMonday" style="flex: 0 0 12.5%;">دوشنبه</label>
+                            
+                            <input type="radio" class="btn-check" name="intervalDayOfWeekRadio" value="2" id="intervalDayTuesday" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="intervalDayTuesday" style="flex: 0 0 12.5%;">سه‌شنبه</label>
+                            
+                            <input type="radio" class="btn-check" name="intervalDayOfWeekRadio" value="3" id="intervalDayWednesday" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="intervalDayWednesday" style="flex: 0 0 12.5%;">چهارشنبه</label>
+                            
+                            <input type="radio" class="btn-check" name="intervalDayOfWeekRadio" value="4" id="intervalDayThursday" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="intervalDayThursday" style="flex: 0 0 12.5%;">پنج‌شنبه</label>
+                            
+                            <input type="radio" class="btn-check" name="intervalDayOfWeekRadio" value="5" id="intervalDayFriday" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="intervalDayFriday" style="flex: 0 0 12.5%;">جمعه</label>
+                        </div>
+
+                        <!-- Hidden input برای ذخیره مقدار -->
+                        <input type="hidden" name="TaskSchedule.IntervalDayOfWeek" id="intervalDayOfWeekHidden">
+                        
+                        <small class="form-text text-muted">
+                            <i class="fa fa-lightbulb me-1"></i>
+                            مثلاً: هر 14 روز، فقط شنبه‌ها (اولین شنبه بعد از 14 روز)
                         </small>
                     </div>
                 </div>

@@ -1,0 +1,52 @@
+﻿/* استایل برای دکمه‌های انتخاب روز هفته در Interval Schedule */
+
+.interval-days-group {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.interval-days-group .btn {
+    flex: 0 0 calc(12.5% - 0.25rem);
+    min-width: 70px;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.25rem;
+    text-align: center;
+}
+
+/* برای موبایل */
+@media (max-width: 768px) {
+    .interval-days-group .btn {
+        flex: 0 0 calc(25% - 0.25rem);
+        min-width: unset;
+        font-size: 0.8rem;
+        padding: 0.4rem 0.2rem;
+    }
+}
+
+/* برای تبلت */
+@media (min-width: 769px) and (max-width: 992px) {
+    .interval-days-group .btn {
+        flex: 0 0 calc(16.66% - 0.25rem);
+        min-width: unset;
+    }
+}
+
+/* هایلایت دکمه انتخاب شده */
+.interval-days-group .btn-check:checked + .btn {
+    font-weight: bold;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* دکمه "هر روز" با رنگ متفاوت */
+.interval-days-group .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.interval-days-group .btn-check:checked + .btn-outline-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}

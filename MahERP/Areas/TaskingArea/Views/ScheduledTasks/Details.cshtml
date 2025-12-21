@@ -274,6 +274,13 @@
             </button>
         </li>
         <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-settings"
+                    type="button" role="tab">
+                <i class="fa fa-cog d-block mb-1"></i>
+                <span class="tab-title">تنظیمات</span>
+            </button>
+        </li>
+        <li class="nav-item">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-timeline"
                     type="button" role="tab">
                 <i class="fa fa-history d-block mb-1"></i>
@@ -745,18 +752,26 @@
         <!-- Tab: یادآوری -->
         <div class="tab-pane fade" id="tab-reminders" role="tabpanel">
             <div class="block block-rounded block-fx-shadow">
-                <div class="block-header block-header-default">
-                    <h3 class="block-title">
-                        <i class="fa fa-bell text-warning me-2"></i>یادآوری‌های تسک
+                <div class="block-header bg-warning text-white">
+                    <h3 class="block-title text-white mb-0">
+                        <i class="fa fa-bell me-2"></i>یادآوری‌های تسک
                     </h3>
                     <div class="block-options">
-                        <button type="button" 
-                                class="btn btn-sm btn-warning"
-                                data-toggle="modal-ajax"
-                                data-url="@Url.Action("AddCustomReminderModal", "Tasks", new { taskId = Model.TaskModel.Id, isScheduled = true })"
-                                data-size="modal-lg">
-                            <i class="fa fa-bell-o me-1"></i> افزودن یادآوری
-                        </button>
+                        @if (Model.CanEdit && Model.Schedule.IsActive && Model.Schedule.IsScheduleEnabled)
+                        {
+                            <button type="button" 
+                                    class="btn btn-sm btn-light"
+                                    data-toggle="modal-ajax"
+                                    href="@Url.Action("AddReminderModal", "Tasks", new { taskId = Model.Schedule.Id })">
+                                <i class="fa fa-plus me-1"></i>افزودن یادآوری
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="badge bg-light text-dark">
+                                <i class="fa fa-lock me-1"></i>قفل شده
+                            </span>
+                        }
                     </div>
                 </div>
                 <div class="block-content" id="reminders-list-container">
@@ -764,6 +779,167 @@
                     <div class="text-center py-3">
                         <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
                         <p class="mt-2 text-muted">در حال بارگذاری یادآوری‌ها...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: تنظیمات -->
+        <div class="tab-pane fade" id="tab-settings" role="tabpanel">
+            <div class="block block-rounded block-fx-shadow">
+                <div class="block-header bg-secondary text-white">
+                    <h3 class="block-title text-white mb-0">
+                        <i class="fa fa-cog me-2"></i>تنظیمات تسک
+                    </h3>
+                </div>
+                <div class="block-content">
+                    @if (Model.CanEdit)
+                    {
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle me-2"></i>
+                            برای تغییر تنظیمات زمان‌بندی، از دکمه "ویرایش" استفاده کنید.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fa fa-lock me-2"></i>
+                            شما مجاز به تغییر تنظیمات نیستید (عضو تیم).
+                        </div>
+                    }
+
+                    <div class="row g-3">
+                        <!-- دسترسی‌ها -->
+                        <div class="col-12">
+                            <h5 class="mb-3">
+                                <i class="fa fa-shield-alt text-primary me-2"></i>دسترسی‌ها
+                            </h5>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 bg-body-light rounded-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="settingIsActive" 
+                                           @(Model.Schedule.IsActive ? "checked" : "") 
+                                           disabled>
+                                    <label class="form-check-label" for="settingIsActive">
+                                        <strong>فعال بودن تسک</strong>
+                                        <p class="text-muted small mb-0">تسک قابل مشاهده و اجرا باشد</p>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 bg-body-light rounded-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="settingIsScheduleEnabled" 
+                                           @(Model.Schedule.IsScheduleEnabled ? "checked" : "") 
+                                           disabled>
+                                    <label class="form-check-label" for="settingIsScheduleEnabled">
+                                        <strong>زمان‌بندی فعال</strong>
+                                        <p class="text-muted small mb-0">اجرای خودکار تسک</p>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 bg-body-light rounded-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="settingImportant" 
+                                           @(Model.TaskModel.Important ? "checked" : "") 
+                                           disabled>
+                                    <label class="form-check-label" for="settingImportant">
+                                        <strong>تسک مهم</strong>
+                                        <p class="text-muted small mb-0">علامت‌گذاری به عنوان مهم</p>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 bg-body-light rounded-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="settingIsRecurring" 
+                                           @(Model.Schedule.IsRecurring ? "checked" : "") 
+                                           disabled>
+                                    <label class="form-check-label" for="settingIsRecurring">
+                                        <strong>تکرار دوره‌ای</strong>
+                                        <p class="text-muted small mb-0">تسک به صورت دوره‌ای اجرا شود</p>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- اطلاعات اضافی -->
+                        <div class="col-12">
+                            <h5 class="mb-3 mt-3">
+                                <i class="fa fa-info-circle text-info me-2"></i>اطلاعات اضافی
+                            </h5>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 bg-body-light rounded-3">
+                                <div class="fs-xs text-muted mb-1">نوع تسک</div>
+                                <div class="fw-semibold">
+                                    @(Model.TaskModel.TaskType == 0 ? "تسک" :
+                                      Model.TaskModel.TaskType == 1 ? "پروژه" : "مایلستون")
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 bg-body-light rounded-3">
+                                <div class="fs-xs text-muted mb-1">اولویت</div>
+                                <div>
+                                    @switch (Model.TaskModel.Priority)
+                                    {
+                                        case 0:
+                                            <span class="badge bg-info-light text-info">
+                                                <i class="fa fa-circle me-1"></i>عادی
+                                            </span>
+                                            break;
+                                        case 1:
+                                            <span class="badge bg-warning-light text-warning">
+                                                <i class="fa fa-star me-1"></i>مهم
+                                            </span>
+                                            break;
+                                        case 2:
+                                            <span class="badge bg-danger-light text-danger">
+                                                <i class="fa fa-bolt me-1"></i>فوری
+                                            </span>
+                                            break;
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (Model.Schedule.MaxOccurrences.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="p-3 bg-body-light rounded-3">
+                                    <div class="fs-xs text-muted mb-1">حداکثر تعداد اجرا</div>
+                                    <div class="fw-semibold">
+                                        @Model.Schedule.MaxOccurrences بار
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="col-md-6">
+                            <div class="p-3 bg-body-light rounded-3">
+                                <div class="fs-xs text-muted mb-1">شعبه</div>
+                                <div class="fw-semibold">
+                                    <i class="fa fa-building text-primary me-2"></i>
+                                    @(Model.Schedule.Branch?.Name ?? "نامشخص")
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -904,26 +1080,14 @@
             `);
 
             $.ajax({
-                url: '@Url.Action("GetTaskRemindersListPartial", "ScheduledTasks")',
+                url: '@Url.Action("GetTaskReminders", "Tasks")',  // ⭐ استفاده از Tasks Controller
                 type: 'GET',
                 data: { taskId: scheduleId },
                 success: function(html) {
                     if (html && html.trim() !== '') {
                         $('#reminders-list-container').html(html);
                     } else {
-                        $('#reminders-list-container').html(`
-                            <div class="text-center py-5 text-muted">
-                                <i class="fa fa-bell-slash fa-3x opacity-25 mb-3"></i>
-                                <p class="mb-0">یادآوری‌ای تعریف نشده است</p>
-                                <button type="button" 
-                                        class="btn btn-warning mt-3"
-                                        data-toggle="modal-ajax"
-                                        data-url="@Url.Action("AddCustomReminderModal", "Tasks")?taskId=${scheduleId}&isScheduled=true"
-                                        data-size="modal-lg">
-                                    <i class="fa fa-bell-o me-1"></i> افزودن اولین یادآوری
-                                </button>
-                            </div>
-                        `);
+                        showEmptyRemindersState();
                     }
                 },
                 error: function() {
@@ -937,17 +1101,32 @@
             });
         }
 
+        function showEmptyRemindersState() {
+            $('#reminders-list-container').html(`
+                <div class="text-center py-5 text-muted">
+                    <i class="fa fa-bell-slash fa-3x opacity-25 mb-3"></i>
+                    <p class="mb-0">یادآوری‌ای تعریف نشده است</p>
+                    <button type="button" 
+                            class="btn btn-warning mt-3"
+                            data-toggle="modal-ajax"
+                            href="@Url.Action("AddReminderModal", "Tasks")?taskId=${scheduleId}">
+                        <i class="fa fa-plus me-1"></i> افزودن اولین یادآوری
+                    </button>
+                </div>
+            `);
+        }
+
         function deleteReminder(reminderId) {
             if (!confirm('آیا از حذف این یادآوری اطمینان دارید؟')) {
                 return;
             }
 
             $.ajax({
-                url: '@Url.Action("DeleteTaskReminder", "ScheduledTasks")',
+                url: '@Url.Action("DeleteReminder", "Tasks")',  // ⭐ استفاده از Tasks Controller
                 type: 'POST',
                 data: {
                     id: reminderId,
-                    scheduleId: scheduleId,
+                    taskId: scheduleId,
                     __RequestVerificationToken: $('[name="__RequestVerificationToken"]').val()
                 },
                 success: function(response) {
@@ -1072,6 +1251,53 @@
                     }
                 }
             });
+        }
+
+        // ⭐⭐⭐ تنظیمات تسک
+        function saveTaskSettings() {
+            const form = $('#task-settings-form');
+            const formData = form.serializeArray();
+            const actionUrl = '@Url.Action("UpdateTaskSettings", "ScheduledTasks")';
+
+            // ارسال درخواست به سرور
+            $.ajax({
+                url: actionUrl,
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    if (response.success) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success('تنظیمات تسک با موفقیت ذخیره شد');
+                        }
+                        // به‌روزرسانی وضعیت تسک در نمای فعلی
+                        updateTaskStatusDisplay();
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('خطا در ذخیره تنظیمات تسک');
+                        }
+                    }
+                },
+                error: function() {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در ذخیره تنظیمات تسک');
+                    }
+                }
+            });
+        }
+
+        function updateTaskStatusDisplay() {
+            const statusColor = '@statusColor';
+            const statusIcon = '@statusIcon';
+            const statusText = '@statusText';
+
+            // به‌روزرسانی آموزش از درخواست به‌روزرسانی تسک
+            const newStatusColor = $('#task-settings-form').find('[name="statusColor"]').val() || statusColor;
+            const newStatusIcon = $('#task-settings-form').find('[name="statusIcon"]').val() || statusIcon;
+            const newStatusText = $('#task-settings-form').find('[name="statusText"]').val() || statusText;
+
+            $('.hero-status-icon').removeClass(`status-${statusColor}`).addClass(`status-${newStatusColor}`);
+            $('.hero-status-icon .status-label').text(newStatusText);
+            $('.hero-status-icon .icon-wrapper i').removeClass(`fa-${statusIcon}`).addClass(`fa-${newStatusIcon}`);
         }
     </script>
 

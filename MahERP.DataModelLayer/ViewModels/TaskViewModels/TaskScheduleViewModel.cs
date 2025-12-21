@@ -31,6 +31,7 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         /// 1 = روزانه
         /// 2 = هفتگی
         /// 3 = ماهانه
+        /// 4 = تکرار با فاصله (Interval) ⭐⭐⭐ جدید
         /// </summary>
         public byte ScheduleType { get; set; }
 
@@ -57,6 +58,22 @@ namespace MahERP.DataModelLayer.ViewModels.taskingModualsViewModels
         /// </summary>
         [MaxLength(100)]
         public string? ScheduledDaysOfMonth { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW: فاصله زمانی (برای Interval)
+        /// تعداد روزها بین هر اجرا
+        /// مثال: 14 = هر 14 روز یکبار
+        /// </summary>
+        public int? IntervalDays { get; set; }
+
+        /// <summary>
+        /// ⭐⭐⭐ NEW: روز هفته برای Interval (اختیاری)
+        /// اگر مشخص شود، فقط در این روز اجرا می‌شود
+        /// مثال: 6 (Saturday) = هر 14 روز، فقط شنبه‌ها
+        /// 0=Sunday, 1=Monday, ..., 6=Saturday
+        /// null = هر روزی که برسد
+        /// </summary>
+        public int? IntervalDayOfWeek { get; set; }
 
         /// <summary>
         /// تاریخ شروع (شمسی)

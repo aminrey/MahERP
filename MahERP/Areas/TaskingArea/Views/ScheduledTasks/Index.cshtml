@@ -163,7 +163,54 @@
     <!-- Tasks List -->
     <div class="row">
         <div class="col-12">
-            @if (Model.ScheduledTasks == null || !Model.ScheduledTasks.Any())
+            <!-- ⭐⭐⭐ بخش 1: تسک‌های دوره‌ای من (سازنده) -->
+            @if (Model.MyScheduledTasks != null && Model.MyScheduledTasks.Any())
+            {
+                <div class="mb-4">
+                    <h5 class="mb-3">
+                        <i class="fas fa-user-check text-primary me-2"></i>
+                        تسک‌های دوره‌ای من
+                        <span class="badge bg-primary">@Model.MyScheduledTasks.Count</span>
+                    </h5>
+                    <div class="row g-3">
+                        @foreach (var schedule in Model.MyScheduledTasks)
+                        {
+                            <div class="col-md-6 col-lg-4">
+                                @await Html.PartialAsync("_ScheduledTaskCardPartial", schedule)
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- ⭐⭐⭐ بخش 2: تسک‌های دوره‌ای تیمی (عضو تیم - فقط مشاهده) -->
+            @if (Model.TeamScheduledTasks != null && Model.TeamScheduledTasks.Any())
+            {
+                <div class="mb-4">
+                    <h5 class="mb-3">
+                        <i class="fas fa-users text-info me-2"></i>
+                        تسک‌های دوره‌ای تیمی
+                        <span class="badge bg-info">@Model.TeamScheduledTasks.Count</span>
+                        <small class="text-muted">(فقط مشاهده)</small>
+                    </h5>
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        شما در این تسک‌های دوره‌ای جزو اعضای تیم هستید. امکان ویرایش یا حذف ندارید.
+                    </div>
+                    <div class="row g-3">
+                        @foreach (var schedule in Model.TeamScheduledTasks)
+                        {
+                            <div class="col-md-6 col-lg-4">
+                                @await Html.PartialAsync("_ScheduledTaskCardPartial", schedule)
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- ⭐⭐⭐ پیام خالی بودن -->
+            @if ((Model.MyScheduledTasks == null || !Model.MyScheduledTasks.Any()) && 
+                 (Model.TeamScheduledTasks == null || !Model.TeamScheduledTasks.Any()))
             {
                 <div class="card border-0 shadow-sm">
                     <div class="card-body text-center py-5">
@@ -175,17 +222,6 @@
                             ایجاد تسک جدید
                         </a>
                     </div>
-                </div>
-            }
-            else
-            {
-                <div class="row g-3">
-                    @foreach (var schedule in Model.ScheduledTasks)
-                    {
-                        <div class="col-md-6 col-lg-4">
-                            @await Html.PartialAsync("_ScheduledTaskCardPartial", schedule)
-                        </div>
-                    }
                 </div>
             }
         </div>

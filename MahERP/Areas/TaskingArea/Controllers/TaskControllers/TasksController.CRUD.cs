@@ -90,6 +90,12 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                     // ⭐⭐⭐ بررسی: آیا زمان‌بندی فعال است؟
                     if (model.TaskSchedule?.IsScheduled == true)
                     {
+                        // ⭐⭐⭐ Debug Log
+                        Console.WriteLine($"🔍 TaskSchedule.IsScheduled: {model.TaskSchedule.IsScheduled}");
+                        Console.WriteLine($"🔍 TaskSchedule.CreateImmediately: {model.TaskSchedule.CreateImmediately}");
+                        Console.WriteLine($"🔍 TaskSchedule.ScheduleType: {model.TaskSchedule.ScheduleType}");
+                        Console.WriteLine($"🔍 TaskSchedule.ScheduleTitle: {model.TaskSchedule.ScheduleTitle}");
+                        
                         // ⭐ زمان‌بندی فعال - ساخت Schedule
                         var (scheduleId, immediateTask) = await _taskRepository.CreateScheduledTaskAsync(
                             model,
