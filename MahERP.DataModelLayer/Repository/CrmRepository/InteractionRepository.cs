@@ -133,6 +133,20 @@ namespace MahERP.DataModelLayer.Repository.CrmRepository
                 interaction.CreatedDate = DateTime.Now;
                 interaction.IsActive = true;
 
+                // اعتبارسنجی OrganizationId - اگر مقداری دارد، بررسی کن که در دیتابیس وجود داشته باشد
+                if (interaction.OrganizationId.HasValue)
+                {
+                    var organizationExists = await _context.Organization_Tbl
+                        .AnyAsync(o => o.Id == interaction.OrganizationId.Value && o.IsActive);
+                    
+                    if (!organizationExists)
+                    {
+                        _logger.LogWarning("سازمان با شناسه {OrganizationId} یافت نشد. OrganizationId به null تنظیم شد", 
+                            interaction.OrganizationId);
+                        interaction.OrganizationId = null;
+                    }
+                }
+
                 _context.Interaction_Tbl.Add(interaction);
                 await _context.SaveChangesAsync();
 
