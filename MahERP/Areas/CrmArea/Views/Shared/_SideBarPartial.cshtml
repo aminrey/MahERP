@@ -145,6 +145,94 @@
                     </li>
                 }
 
+                <!-- ============== 👥 CONTACTS & ORGANIZATIONS (افراد و سازمان‌ها) ============== -->
+                @if (Html.CanAccessAnyIn("CONTACT", "ORG"))
+                {
+                    <li class="nav-main-heading">افراد و سازمان‌ها</li>
+
+                    <!-- مدیریت افراد -->
+                    @if (Html.CanAccessAnyIn("CONTACT"))
+                    {
+                        <li class="nav-main-item @(IsContactMenuActive(currentController) ? "open" : "")">
+                            <a aria-expanded="@(IsContactMenuActive(currentController) ? "true" : "false")" 
+                               aria-haspopup="true" 
+                               class="nav-main-link nav-main-link-submenu" 
+                               data-toggle="submenu" href="#">
+                                <i class="nav-main-link-icon fa fa-users text-success"></i>
+                                <span class="nav-main-link-name">مدیریت افراد</span>
+                            </a>
+                            <ul class="nav-main-submenu">
+                                @if (Html.CanAccessAny("CONTACT", "CONTACT.VIEW"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CrmContacts", "Index") ? "active" : "")" 
+                                           asp-area="CrmArea" 
+                                           asp-controller="CrmContacts" 
+                                           asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-list text-info"></i>
+                                            <span class="nav-main-link-name">لیست افراد</span>
+                                        </a>
+                                    </li>
+                                }
+                                
+                                @if (Html.CanAccessAny("CONTACT", "CONTACT.CREATE"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "CrmContacts", "Create") ? "active" : "")" 
+                                           asp-area="CrmArea" 
+                                           asp-controller="CrmContacts" 
+                                           asp-action="Create">
+                                            <i class="nav-main-link-icon fa fa-user-plus text-success"></i>
+                                            <span class="nav-main-link-name fw-semibold">فرد جدید</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                    }
+
+                    <!-- مدیریت سازمان‌ها -->
+                    @if (Html.CanAccessAnyIn("ORG"))
+                    {
+                        <li class="nav-main-item @(IsOrganizationMenuActive(currentController) ? "open" : "")">
+                            <a aria-expanded="@(IsOrganizationMenuActive(currentController) ? "true" : "false")" 
+                               aria-haspopup="true" 
+                               class="nav-main-link nav-main-link-submenu" 
+                               data-toggle="submenu" href="#">
+                                <i class="nav-main-link-icon fa fa-building text-primary"></i>
+                                <span class="nav-main-link-name">مدیریت سازمان‌ها</span>
+                            </a>
+                            <ul class="nav-main-submenu">
+                                @if (Html.CanAccessAny("ORG", "ORG.VIEW"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link @(IsMenuItemActive(currentController, currentAction, "CrmOrganizations", "Index") ? "active" : "")" 
+                                           asp-area="CrmArea" 
+                                           asp-controller="CrmOrganizations" 
+                                           asp-action="Index">
+                                            <i class="nav-main-link-icon fa fa-list text-info"></i>
+                                            <span class="nav-main-link-name">لیست سازمان‌ها</span>
+                                        </a>
+                                    </li>
+                                }
+                                
+                                @if (Html.CanAccessAny("ORG", "ORG.CREATE"))
+                                {
+                                    <li class="nav-main-item">
+                                        <a class="nav-main-link nav-main-link-create @(IsMenuItemActive(currentController, currentAction, "CrmOrganizations", "Create") ? "active" : "")" 
+                                           asp-area="CrmArea" 
+                                           asp-controller="CrmOrganizations" 
+                                           asp-action="Create">
+                                            <i class="nav-main-link-icon fa fa-plus-circle text-success"></i>
+                                            <span class="nav-main-link-name fw-semibold">سازمان جدید</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                    }
+                }
+
                 <!-- ============== 📨 COMMUNICATION MANAGEMENT ============== -->
                 @if (Html.CanAccessAnyIn("COMMUNICATION.SMS", "COMMUNICATION.EMAIL"))
                 {
@@ -345,6 +433,8 @@
     public bool IsInteractionMenuActive(string currentController) => currentController == "Interaction";
     public bool IsGoalMenuActive(string currentController) => currentController == "Goal";
     public bool IsReferralMenuActive(string currentController) => currentController == "Referral";
+    public bool IsContactMenuActive(string currentController) => currentController == "CrmContacts";
+    public bool IsOrganizationMenuActive(string currentController) => currentController == "CrmOrganizations";
     public bool IsSettingsMenuActive(string currentController) => currentController == "Stage" || currentController == "InteractionType";
     public bool IsSmsMenuActive(string currentController) => currentController == "SmsSend" || currentController == "SmsTemplate" || currentController == "SmsProvider";
     public bool IsEmailMenuActive(string currentController) => currentController == "EmailSend" || currentController == "EmailTemplate";

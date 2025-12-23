@@ -83,37 +83,45 @@ namespace MahERP.DataModelLayer.Repository
         /// <returns></returns>
         public List<BranchViewModel> GetBrnachListByUserId(string UserLoginingid)
         {
-            //این باید درست بشه 
-            List<BranchViewModel> branchList = new List<BranchViewModel>();
+            // ⭐⭐⭐ اصلاح شده: منطق صحیح برای Admin و کاربر عادی
+            
+            // بررسی اینکه آیا کاربر Admin است یا نه
             bool IsAdmin = _userManagerRepository.GetUserInfoData(UserLoginingid) != null;
-            IsAdmin = true;
+
+            List<BranchViewModel> branchList;
+
             if (IsAdmin)
             {
+                // ⭐ Admin: تمام شعبه‌های فعال را می‌بیند
+                branchList = (from bu in _context.Branch_Tbl
+                              where bu.IsActive
+                              select new BranchViewModel
+                              {
+                                  Id = bu.Id,
+                                  Name = bu.Name,
+                                  IsMainBranch = bu.IsMainBranch,
+                                  IsActive = bu.IsActive
+                              }).ToList();
+            }
+            else
+            {
+                // ⭐ کاربر عادی: فقط شعبه‌هایی که به آن اختصاص یافته
                 branchList = (from branchUser in _context.BranchUser_Tbl
                               join bu in _context.Branch_Tbl on branchUser.BranchId equals bu.Id
+                              where branchUser.UserId == UserLoginingid && 
+                                    branchUser.IsActive && 
+                                    bu.IsActive
                               select new BranchViewModel
                               {
                                   Id = bu.Id,
                                   Name = bu.Name,
                                   IsMainBranch = bu.IsMainBranch,
                                   IsActive = branchUser.IsActive
-                              }).ToList();
-            }
-            else
-            {
-            
+                              })
+                              .Distinct()
+                              .ToList();
             }
 
-               branchList = (from branchUser in _context.BranchUser_Tbl
-                                                    join bu in _context.Branch_Tbl on branchUser.BranchId equals bu.Id
-                                                    where branchUser.UserId == UserLoginingid && branchUser.IsActive
-                                                    select new BranchViewModel
-                                                    {
-                                                        Id = bu.Id,
-                                                        Name = bu.Name,
-                                                        IsMainBranch = bu.IsMainBranch,
-                                                        IsActive = branchUser.IsActive
-                                                    }).ToList();
             return branchList;
         }
 

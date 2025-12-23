@@ -1,0 +1,209 @@
+﻿@model MahERP.DataModelLayer.ViewModels.OrganizationViewModels.OrganizationCreateViewModel
+@{
+    ViewData["Title"] = "افزودن سازمان جدید";
+    var userBranches = ViewBag.UserBranches as List<MahERP.DataModelLayer.Entities.AcControl.Branch>;
+    var selectedBranchId = ViewBag.SelectedBranchId as int?;
+    var selectedBranchName = ViewBag.SelectedBranchName as string;
+    var showBranchSelection = ViewBag.ShowBranchSelection as bool? ?? false;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-building text-primary me-2"></i>
+                افزودن سازمان جدید
+                @if (!string.IsNullOrEmpty(selectedBranchName))
+                {
+                    <small class="text-muted">- @selectedBranchName</small>
+                }
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">CRM</li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">سازمان‌ها</a>
+                    </li>
+                    <li class="breadcrumb-item active">افزودن</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    @if (showBranchSelection)
+    {
+        <!-- انتخاب شعبه -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-sitemap me-2"></i>
+                            انتخاب شعبه
+                        </h3>
+                    </div>
+                    <div class="block-content block-content-full">
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle me-2"></i>
+                            ابتدا شعبه‌ای که می‌خواهید سازمان را به آن اضافه کنید انتخاب کنید.
+                        </div>
+
+                        <div class="row">
+                            @foreach (var branch in userBranches)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <a href="@Url.Action("Create", new { branchId = branch.Id })" 
+                                       class="block block-link-shadow text-center">
+                                        <div class="block-content block-content-full">
+                                            <i class="fa fa-building fa-3x text-primary mb-3"></i>
+                                            <h4 class="fw-bold">@branch.Name</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- فرم افزودن -->
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="BranchId" />
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">اطلاعات سازمان</h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label" asp-for="Name">
+                                        نام سازمان <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Name" class="form-control" required />
+                                    <span asp-validation-for="Name" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label" asp-for="Brand">نام برند</label>
+                                    <input asp-for="Brand" class="form-control" />
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label" asp-for="RegistrationNumber">شماره ثبت</label>
+                                    <input asp-for="RegistrationNumber" class="form-control" maxlength="11" />
+                                    <span asp-validation-for="RegistrationNumber" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label" asp-for="EconomicCode">کد اقتصادی</label>
+                                    <input asp-for="EconomicCode" class="form-control" maxlength="12" />
+                                    <span asp-validation-for="EconomicCode" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label" asp-for="OrganizationType">نوع سازمان</label>
+                                    <select asp-for="OrganizationType" class="form-select">
+                                        <option value="0">شرکت</option>
+                                        <option value="1">سازمان</option>
+                                        <option value="2">موسسه</option>
+                                        <option value="3">نهاد</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label" asp-for="LegalRepresentative">نماینده قانونی</label>
+                                    <input asp-for="LegalRepresentative" class="form-control" />
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label" asp-for="PrimaryPhone">تلفن</label>
+                                    <input asp-for="PrimaryPhone" class="form-control" dir="ltr" />
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label" asp-for="Email">ایمیل</label>
+                                    <input asp-for="Email" type="email" class="form-control" dir="ltr" />
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" asp-for="Website">وب‌سایت</label>
+                                <input asp-for="Website" class="form-control" dir="ltr" placeholder="https://example.com" />
+                                <span asp-validation-for="Website" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" asp-for="Address">آدرس</label>
+                                <textarea asp-for="Address" class="form-control" rows="2"></textarea>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" asp-for="PostalCode">کد پستی</label>
+                                <input asp-for="PostalCode" class="form-control" maxlength="20" />
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" asp-for="Description">توضیحات</label>
+                                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default bg-primary-light">
+                            <h3 class="block-title text-primary">
+                                <i class="fa fa-link me-1"></i>
+                                شعبه
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="alert alert-info alert-sm">
+                                <small>
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    این سازمان به شعبه "<strong>@selectedBranchName</strong>" افزوده می‌شود.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- دکمه‌ها -->
+            <div class="block block-rounded">
+                <div class="block-content bg-body-light">
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" asp-route-branchId="@selectedBranchId" class="btn btn-alt-secondary">
+                            <i class="fa fa-arrow-right me-1"></i>
+                            انصراف
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-check me-1"></i>
+                            ثبت سازمان
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

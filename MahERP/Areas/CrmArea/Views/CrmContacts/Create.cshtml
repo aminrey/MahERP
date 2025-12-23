@@ -1,0 +1,243 @@
+﻿@model MahERP.DataModelLayer.ViewModels.ContactViewModels.ContactCreateViewModel
+@{
+    ViewData["Title"] = "افزودن فرد جدید";
+    var userBranches = ViewBag.UserBranches as List<MahERP.DataModelLayer.Entities.AcControl.Branch>;
+    var selectedBranchId = ViewBag.SelectedBranchId as int?;
+    var selectedBranchName = ViewBag.SelectedBranchName as string;
+    var showBranchSelection = ViewBag.ShowBranchSelection as bool? ?? false;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-user-plus text-success me-2"></i>
+                افزودن فرد جدید
+                @if (!string.IsNullOrEmpty(selectedBranchName))
+                {
+                    <small class="text-muted">- @selectedBranchName</small>
+                }
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">CRM</li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index">افراد</a>
+                    </li>
+                    <li class="breadcrumb-item active">افزودن</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    @if (showBranchSelection)
+    {
+        <!-- انتخاب شعبه -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="block block-rounded">
+                    <div class="block-header block-header-default">
+                        <h3 class="block-title">
+                            <i class="fa fa-sitemap me-2"></i>
+                            انتخاب شعبه
+                        </h3>
+                    </div>
+                    <div class="block-content block-content-full">
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle me-2"></i>
+                            ابتدا شعبه‌ای که می‌خواهید فرد را به آن اضافه کنید انتخاب کنید.
+                        </div>
+
+                        <div class="row">
+                            @foreach (var branch in userBranches)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <a href="@Url.Action("Create", new { branchId = branch.Id })" 
+                                       class="block block-link-shadow text-center">
+                                        <div class="block-content block-content-full">
+                                            <i class="fa fa-building fa-3x text-primary mb-3"></i>
+                                            <h4 class="fw-bold">@branch.Name</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- فرم افزودن -->
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="BranchId" />
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- اطلاعات اصلی -->
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default">
+                            <h3 class="block-title">
+                                <i class="fa fa-user me-1"></i>
+                                اطلاعات فرد
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" asp-for="FirstName">نام</label>
+                                        <input asp-for="FirstName" class="form-control" placeholder="نام" />
+                                        <span asp-validation-for="FirstName" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" asp-for="LastName">
+                                            نام خانوادگی <span class="text-danger">*</span>
+                                        </label>
+                                        <input asp-for="LastName" class="form-control" placeholder="نام خانوادگی" required />
+                                        <span asp-validation-for="LastName" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" asp-for="NationalCode">کد ملی</label>
+                                        <input asp-for="NationalCode" class="form-control" placeholder="1234567890" maxlength="10" />
+                                        <span asp-validation-for="NationalCode" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-4">
+                                        <label class="form-label" asp-for="Gender">جنسیت</label>
+                                        <select asp-for="Gender" class="form-select">
+                                            <option value="">-- انتخاب کنید --</option>
+                                            <option value="0">مرد</option>
+                                            <option value="1">زن</option>
+                                            <option value="2">سایر</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" asp-for="PrimaryPhone">شماره تلفن</label>
+                                <input asp-for="PrimaryPhone" class="form-control" placeholder="09121234567" dir="ltr" />
+                                <span asp-validation-for="PrimaryPhone" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" asp-for="PrimaryEmail">ایمیل</label>
+                                <input asp-for="PrimaryEmail" type="email" class="form-control" placeholder="example@domain.com" dir="ltr" />
+                                <span asp-validation-for="PrimaryEmail" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" asp-for="PrimaryAddress">آدرس</label>
+                                <textarea asp-for="PrimaryAddress" class="form-control" rows="2" placeholder="آدرس کامل"></textarea>
+                                <span asp-validation-for="PrimaryAddress" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" asp-for="PrimaryPostalCode">کد پستی</label>
+                                <input asp-for="PrimaryPostalCode" class="form-control" placeholder="1234567890" maxlength="20" />
+                                <span asp-validation-for="PrimaryPostalCode" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" asp-for="Notes">یادداشت‌ها</label>
+                                <textarea asp-for="Notes" class="form-control" rows="3" placeholder="یادداشت‌های شما در مورد این فرد..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- نوع رابطه با شعبه -->
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default bg-primary-light">
+                            <h3 class="block-title text-primary">
+                                <i class="fa fa-link me-1"></i>
+                                نوع رابطه با شعبه
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <div class="mb-3">
+                                <label class="form-label">نوع <span class="text-danger">*</span></label>
+                                <select asp-for="BranchRelationType" class="form-select" required>
+                                    <option value="0">مشتری</option>
+                                    <option value="1">تامین‌کننده</option>
+                                    <option value="2">همکار</option>
+                                    <option value="3">سایر</option>
+                                </select>
+                            </div>
+                            <div class="alert alert-info alert-sm">
+                                <small>
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    این فرد با نوع رابطه انتخابی به شعبه "<strong>@selectedBranchName</strong>" افزوده می‌شود.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- راهنما -->
+                    <div class="block block-rounded">
+                        <div class="block-header block-header-default bg-body-light">
+                            <h3 class="block-title">
+                                <i class="fa fa-lightbulb me-1 text-warning"></i>
+                                راهنما
+                            </h3>
+                        </div>
+                        <div class="block-content">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fa fa-check text-success me-2"></i>
+                                    فرد ابتدا در سیستم ثبت می‌شود
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fa fa-check text-success me-2"></i>
+                                    سپس به شعبه انتخابی متصل می‌شود
+                                </li>
+                                <li>
+                                    <i class="fa fa-check text-success me-2"></i>
+                                    پس از ثبت می‌توانید تعاملات و اهداف ایجاد کنید
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- دکمه‌های عملیات -->
+            <div class="block block-rounded">
+                <div class="block-content block-content-full bg-body-light">
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" asp-route-branchId="@selectedBranchId" class="btn btn-alt-secondary">
+                            <i class="fa fa-arrow-right me-1"></i>
+                            انصراف
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-check me-1"></i>
+                            ثبت فرد
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    }
+</div>
+<!-- END Page Content -->
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

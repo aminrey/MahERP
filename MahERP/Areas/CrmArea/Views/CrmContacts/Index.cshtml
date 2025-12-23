@@ -1,0 +1,267 @@
+﻿@model List<MahERP.DataModelLayer.ViewModels.ContactViewModels.ContactViewModel>
+@using MahERP.DataModelLayer.Enums
+@using MahERP.DataModelLayer.ViewModels.UserViewModels
+@{
+    ViewData["Title"] = "مدیریت افراد - CRM";
+    var userBranches = ViewBag.UserBranches as List<BranchViewModel>;
+    var selectedBranchId = ViewBag.SelectedBranchId as int?;
+    var selectedBranchName = ViewBag.SelectedBranchName as string;
+    var showBranchSelection = ViewBag.ShowBranchSelection as bool? ?? false;
+    var hasSingleBranch = ViewBag.HasSingleBranch as bool? ?? false;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-users text-success me-2"></i>
+                مدیریت افراد
+                @if (!string.IsNullOrEmpty(selectedBranchName))
+                {
+                    <small class="text-muted">- @selectedBranchName</small>
+                }
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">CRM</li>
+                    <li class="breadcrumb-item active">افراد</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    @if (showBranchSelection || !selectedBranchId.HasValue)
+    {
+        <!-- ============== انتخاب شعبه (مثل Contract) ============== -->
+        
+        <!-- Quick Actions: انتخاب شعبه -->
+        <div class="row items-push">
+            @if (userBranches != null && userBranches.Any())
+            {
+                @foreach (var branch in userBranches)
+                {
+                    <div class="col-6 col-md-4 col-xl-2">
+                        <a href="javascript:void(0)" onclick="loadBranchContacts(@branch.Id)" class="block block-rounded block-link-shadow text-center h-100 mb-0">
+                            <div class="block-content py-5">
+                                <div class="fs-3 fw-semibold mb-1">
+                                    <i class="fa fa-building text-primary"></i>
+                                </div>
+                                <p class="fw-semibold fs-sm text-uppercase mb-0">
+                                    @branch.Name
+                                </p>
+                            </div>
+                        </a>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="block block-rounded">
+                        <div class="block-content">
+                            <div class="alert alert-warning d-flex align-items-center">
+                                <i class="fa fa-exclamation-triangle fa-2x me-3"></i>
+                                <div>
+                                    <strong>هیچ شعبه‌ای یافت نشد!</strong>
+                                    <p class="mb-0">شما به هیچ شعبه‌ای دسترسی ندارید. لطفاً با مدیر سیستم تماس بگیرید.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- ============== Toolbar با جستجو و دکمه‌ها ============== -->
+        <div class="block block-rounded">
+            <div class="block-content block-content-full">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <!-- جستجو -->
+                        <div class="input-group">
+                            <input type="text" id="searchInput" class="form-control" placeholder="جستجو (نام، ایمیل، کد ملی)" />
+                            <button type="button" onclick="searchContacts()" class="btn btn-primary">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end mt-3 mt-md-0">
+                        <!-- تغییر شعبه -->
+                        @if (!hasSingleBranch)
+                        {
+                            <button type="button" onclick="showBranchSelection()" class="btn btn-alt-secondary me-2">
+                                <i class="fa fa-exchange-alt me-1"></i>
+                                تغییر شعبه
+                            </button>
+                        }
+
+                        <!-- افزودن فرد جدید -->
+                        <a asp-action="Create" asp-route-branchId="@selectedBranchId" class="btn btn-success">
+                            <i class="fa fa-plus me-1"></i>
+                            فرد جدید
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============== Container برای لیست افراد ============== -->
+        <div id="contactsListContainer">
+            @if (Model != null && Model.Any())
+            {
+                @await Html.PartialAsync("_ContactsListPartial", Model)
+            }
+            else
+            {
+                <div class="block block-rounded">
+                    <div class="block-content text-center py-5">
+                        <i class="fa fa-spinner fa-spin fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">در حال بارگذاری...</p>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+<!-- END Page Content -->
+
+@section Scripts {
+    <script>
+        // ⭐ متغیرهای Global
+        let currentBranchId = @(selectedBranchId ?? 0);
+        let currentSearchTerm = '';
+        let currentGenderFilter = null;
+
+        // ⭐ بارگذاری لیست افراد شعبه
+        function loadBranchContacts(branchId, searchTerm = '', genderFilter = null) {
+            console.log('📥 Loading contacts for branch:', branchId);
+
+            currentBranchId = branchId;
+            currentSearchTerm = searchTerm;
+            currentGenderFilter = genderFilter;
+
+            // نمایش loading
+            $('#contactsListContainer').html(`
+                <div class="block block-rounded">
+                    <div class="block-content text-center py-5">
+                        <i class="fa fa-spinner fa-spin fa-3x text-primary mb-3"></i>
+                        <p class="text-muted">در حال بارگذاری لیست افراد...</p>
+                    </div>
+                </div>
+            `);
+
+            // ⭐ AJAX Request
+            $.ajax({
+                url: '@Url.Action("LoadContactsList", "CrmContacts", new { area = "CrmArea" })',
+                type: 'POST',
+                data: {
+                    branchId: branchId,
+                    searchTerm: searchTerm,
+                    gender: genderFilter,
+                    __RequestVerificationToken: getAntiForgeryToken()
+                },
+                success: function (response) {
+                    console.log('✅ Response:', response);
+
+                    if (response.status === 'update-view' && response.viewList) {
+                        response.viewList.forEach(function (item) {
+                            if (item.elementId && item.view && item.view.result) {
+                                $('#' + item.elementId).html(item.view.result);
+                            }
+                        });
+
+                        // مخفی کردن انتخاب شعبه
+                        $('.items-push').hide();
+
+                        // نمایش toolbar
+                        $('.block-rounded').first().show();
+                    } else if (response.status === 'error') {
+                        if (response.message) {
+                            SendResposeMessage(response.message);
+                        }
+                        $('#contactsListContainer').html(`
+                            <div class="alert alert-danger">
+                                <i class="fa fa-exclamation-triangle me-2"></i>
+                                خطا در بارگذاری اطلاعات
+                            </div>
+                        `);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('❌ AJAX Error:', error);
+                    NotificationHelper.error('خطا در بارگذاری لیست افراد');
+
+                    $('#contactsListContainer').html(`
+                        <div class="alert alert-danger">
+                            <i class="fa fa-times me-2"></i>
+                            خطا در ارتباط با سرور
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        // ⭐ جستجو
+        function searchContacts() {
+            const searchTerm = $('#searchInput').val();
+            loadBranchContacts(currentBranchId, searchTerm, currentGenderFilter);
+        }
+
+        // ⭐ فیلتر جنسیت
+        function filterByGender(branchId, gender) {
+            loadBranchContacts(branchId, currentSearchTerm, gender);
+        }
+
+        // ⭐ حذف فرد
+        function deleteContact(id, name, branchId) {
+            if (confirm('آیا از حذف "' + name + '" از این شعبه اطمینان دارید؟')) {
+                $.ajax({
+                    url: '@Url.Action("Delete", "CrmContacts", new { area = "CrmArea" })',
+                    type: 'POST',
+                    data: {
+                        id: id,
+                        branchId: branchId,
+                        __RequestVerificationToken: getAntiForgeryToken()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            NotificationHelper.success(response.message);
+                            loadBranchContacts(branchId);
+                        } else {
+                            NotificationHelper.error(response.message);
+                        }
+                    },
+                    error: function () {
+                        NotificationHelper.error('خطا در حذف فرد');
+                    }
+                });
+            }
+        }
+
+        // ⭐ نمایش انتخاب شعبه
+        function showBranchSelection() {
+            location.reload();
+        }
+
+        // ⭐ Enter key در جستجو
+        $('#searchInput').on('keypress', function (e) {
+            if (e.which === 13) {
+                searchContacts();
+            }
+        });
+
+        // ⭐ اگر شعبه انتخاب شده، لیست را بارگذاری کن
+        $(document).ready(function () {
+            if (currentBranchId > 0) {
+                console.log('✅ Branch already selected:', currentBranchId);
+            }
+        });
+    </script>
+}

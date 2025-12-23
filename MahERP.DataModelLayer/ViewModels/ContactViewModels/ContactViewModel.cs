@@ -46,7 +46,13 @@ namespace MahERP.DataModelLayer.ViewModels.ContactViewModels
         public int BranchId { get; set; }
 
         /// <summary>
-        /// ⭐ اضافه شده
+        /// ⭐ نوع فرد (Lead, Customer, Partner, etc.)
+        /// </summary>
+        [Display(Name = "نوع")]
+        public MahERP.DataModelLayer.Enums.ContactType? ContactType { get; set; }
+
+        /// <summary>
+        /// ⭐ نوع رابطه با شعبه
         /// </summary>
         [Display(Name = "نوع رابطه")]
         public byte RelationType { get; set; }

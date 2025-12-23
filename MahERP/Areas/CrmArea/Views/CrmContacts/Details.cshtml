@@ -1,0 +1,107 @@
+﻿@model MahERP.DataModelLayer.ViewModels.ContactViewModels.ContactViewModel
+@{
+    ViewData["Title"] = "جزئیات فرد";
+    var branchId = ViewBag.BranchId as int?;
+    var branchName = ViewBag.BranchName as string;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-user text-primary me-2"></i>
+                @Model.FullName
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">CRM</li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index" asp-route-branchId="@branchId">افراد</a>
+                    </li>
+                    <li class="breadcrumb-item active">جزئیات</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- اطلاعات اصلی -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-info-circle me-1"></i>
+                        اطلاعات فرد
+                    </h3>
+                    <div class="block-options">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" asp-route-branchId="@branchId" class="btn btn-sm btn-warning">
+                            <i class="fa fa-pencil-alt me-1"></i>
+                            ویرایش
+                        </a>
+                    </div>
+                </div>
+                <div class="block-content">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>نام کامل:</strong>
+                            <p>@Model.FullName</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>کد ملی:</strong>
+                            <p>@(Model.NationalCode ?? "-")</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>ایمیل:</strong>
+                            <p>@(Model.PrimaryEmail ?? "-")</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>جنسیت:</strong>
+                            <p>
+                                @(Model.Gender == 0 ? "مرد" : Model.Gender == 1 ? "زن" : "-")
+                            </p>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.PrimaryAddress))
+                    {
+                        <div class="mb-3">
+                            <strong>آدرس:</strong>
+                            <p>@Model.PrimaryAddress</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- شعبه -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default bg-primary-light">
+                    <h3 class="block-title text-primary">
+                        <i class="fa fa-building me-1"></i>
+                        شعبه
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <p class="fw-bold fs-5">@branchName</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- بازگشت -->
+    <div class="block block-rounded">
+        <div class="block-content bg-body-light">
+            <a asp-action="Index" asp-route-branchId="@branchId" class="btn btn-alt-secondary">
+                <i class="fa fa-arrow-right me-1"></i>
+                بازگشت
+            </a>
+        </div>
+    </div>
+</div>

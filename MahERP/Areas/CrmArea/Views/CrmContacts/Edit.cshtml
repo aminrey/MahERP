@@ -1,0 +1,109 @@
+﻿@model MahERP.DataModelLayer.ViewModels.ContactViewModels.ContactEditViewModel
+@{
+    ViewData["Title"] = "ویرایش فرد";
+    var branchName = ViewBag.BranchName as string;
+}
+
+<!-- Hero -->
+<div class="bg-body-light">
+    <div class="content content-full">
+        <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+            <h1 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+                <i class="fa fa-pencil-alt text-warning me-2"></i>
+                ویرایش فرد
+            </h1>
+            <nav class="flex-shrink-0 my-2 my-sm-0 ms-sm-3" aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">CRM</li>
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index" asp-route-branchId="@Model.BranchId">افراد</a>
+                    </li>
+                    <li class="breadcrumb-item active">ویرایش</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- END Hero -->
+
+<!-- Page Content -->
+<div class="content">
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="BranchId" />
+
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">اطلاعات فرد</h3>
+            </div>
+            <div class="block-content">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label" asp-for="FirstName">نام</label>
+                        <input asp-for="FirstName" class="form-control" />
+                        <span asp-validation-for="FirstName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label" asp-for="LastName">نام خانوادگی <span class="text-danger">*</span></label>
+                        <input asp-for="LastName" class="form-control" required />
+                        <span asp-validation-for="LastName" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label" asp-for="NationalCode">کد ملی</label>
+                        <input asp-for="NationalCode" class="form-control" maxlength="10" />
+                        <span asp-validation-for="NationalCode" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label" asp-for="Gender">جنسیت</label>
+                        <select asp-for="Gender" class="form-select">
+                            <option value="">-- انتخاب کنید --</option>
+                            <option value="0">مرد</option>
+                            <option value="1">زن</option>
+                            <option value="2">سایر</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" asp-for="PrimaryEmail">ایمیل اصلی</label>
+                    <input asp-for="PrimaryEmail" type="email" class="form-control" dir="ltr" />
+                    <span asp-validation-for="PrimaryEmail" class="text-danger"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" asp-for="PrimaryAddress">آدرس</label>
+                    <textarea asp-for="PrimaryAddress" class="form-control" rows="2"></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" asp-for="Notes">یادداشت‌ها</label>
+                    <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- دکمه‌ها -->
+        <div class="block block-rounded">
+            <div class="block-content bg-body-light">
+                <div class="d-flex justify-content-between">
+                    <a asp-action="Index" asp-route-branchId="@Model.BranchId" class="btn btn-alt-secondary">
+                        <i class="fa fa-arrow-right me-1"></i>
+                        انصراف
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-check me-1"></i>
+                        ذخیره تغییرات
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
