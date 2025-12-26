@@ -37,26 +37,18 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
 
                 var currentUserId = _userManager.GetUserId(User);
 
-                // ⭐⭐⭐ بررسی‌های موازی برای کاهش زمان
-                var accessTask = _taskRepository.CanUserViewTaskAsync(currentUserId, model.TaskId);
-                var taskTask = _taskRepository.GetTaskByIdAsync(model.TaskId);
-                var assignmentTask = _taskRepository.GetTaskAssignmentByUserAndTaskAsync(currentUserId, model.TaskId);
-                // ⭐⭐⭐ بررسی دسترسی کامنت‌گذاری بر اساس تنظیمات تسک
-                var canCommentTask = _taskRepository.CanUserPerformActionAsync(model.TaskId, currentUserId, TaskAction.Comment);
-
-                await Task.WhenAll(accessTask, taskTask, assignmentTask, canCommentTask);
-
-                var hasAccess = await accessTask;
-                var task = await taskTask;
-                var currentUserAssignment = await assignmentTask;
-                var canComment = await canCommentTask;
-
+                // ⭐⭐⭐ اجرای ترتیبی به جای موازی (به دلیل استفاده مشترک از DbContext)
+                // این تغییر از Deadlock و تداخل query ها جلوگیری می‌کند
+                var hasAccess = await _taskRepository.CanUserViewTaskAsync(currentUserId, model.TaskId);
+                
                 if (!hasAccess)
                 {
                     return Json(new { success = false, message = "شما به این تسک دسترسی ندارید" });
                 }
 
                 // ⭐⭐⭐ بررسی دسترسی کامنت‌گذاری بر اساس تنظیمات تسک
+                var canComment = await _taskRepository.CanUserPerformActionAsync(model.TaskId, currentUserId, TaskAction.Comment);
+                
                 if (!canComment)
                 {
                     return Json(new { 
@@ -66,6 +58,9 @@ namespace MahERP.Areas.TaskingArea.Controllers.TaskControllers
                         }
                     });
                 }
+
+                var task = await _taskRepository.GetTaskByIdAsync(model.TaskId);
+                var currentUserAssignment = await _taskRepository.GetTaskAssignmentByUserAndTaskAsync(currentUserId, model.TaskId);
 
                 var isTaskCompletedForCurrentUser = currentUserAssignment?.CompletionDate.HasValue ?? false;
 
