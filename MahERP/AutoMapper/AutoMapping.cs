@@ -221,6 +221,7 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.EstimatedHours, opt => opt.MapFrom(src => src.EstimatedHours))
                 .ForMember(dest => dest.IsHardDeadline, opt => opt.MapFrom(src => src.IsHardDeadline))
                 .ForMember(dest => dest.TimeNote, opt => opt.MapFrom(src => src.TimeNote))
+                .ForMember(dest => dest.ExistingAttachments, opt => opt.MapFrom(src => src.TaskAttachments))
                 // ⭐⭐⭐ Mapping فیلدهای اضافی
                 .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority))
                 .ForMember(dest => dest.Important, opt => opt.MapFrom(src => src.Important))
@@ -231,7 +232,6 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.IsPrivate, opt => opt.MapFrom(src => src.IsPrivate))
                 .ForMember(dest => dest.CompletionMode, opt => opt.MapFrom(src => src.CompletionMode))
                 // ⭐⭐⭐ Ignore فیلدهای فقط-خواندنی و محاسباتی
-                .ForMember(dest => dest.ExistingAttachments, opt => opt.Ignore())
                 .ForMember(dest => dest.Attachments, opt => opt.Ignore())
                 .ForMember(dest => dest.TaskOperationsJson, opt => opt.Ignore())
                 .ForMember(dest => dest.TaskRemindersJson, opt => opt.Ignore())
@@ -304,7 +304,6 @@ namespace MahERP.AutoMapper
                 .ForMember(dest => dest.LastUpdateDate, opt => opt.Ignore())
                 .ForMember(dest => dest.TaskAssignments, opt => opt.Ignore())
                 .ForMember(dest => dest.TaskComments, opt => opt.Ignore())
-                .ForMember(dest => dest.TaskAttachments, opt => opt.Ignore())
                 .ForMember(dest => dest.TaskNotifications, opt => opt.Ignore())
                 .ForMember(dest => dest.TaskOperations, opt => opt.Ignore())
                 .ForMember(dest => dest.TaskViewers, opt => opt.Ignore())

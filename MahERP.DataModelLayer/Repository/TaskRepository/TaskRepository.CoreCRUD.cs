@@ -82,7 +82,10 @@ namespace MahERP.DataModelLayer.Repository.Tasking
             }
 
             if (includeAttachments)
-                query = query.Include(t => t.TaskAttachments);
+            {
+                query = query.Include(t => t.TaskAttachments)
+                    .ThenInclude(a => a.Uploader);
+            }
 
             if (includeComments)
             {

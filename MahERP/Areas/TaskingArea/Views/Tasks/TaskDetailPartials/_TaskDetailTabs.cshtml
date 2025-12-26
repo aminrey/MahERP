@@ -8,13 +8,13 @@
         </button>
     </li>
     
-    @if (Model.Attachments?.Any() == true)
+    @if (Model.ExistingAttachments?.Any() == true)
     {
         <li class="nav-item">
             <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#tab-attachments" type="button" role="tab">
                 <i class="fa fa-paperclip d-block mb-1"></i>
                 <span class="tab-title">پیوست‌ها</span>
-                <span class="badge bg-success rounded-pill ms-1">@Model.Attachments.Count()</span>
+                <span class="badge bg-success rounded-pill ms-1">@Model.ExistingAttachments.Count()</span>
             </button>
         </li>
     }
