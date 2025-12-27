@@ -35,8 +35,8 @@ namespace MahERP.DataModelLayer.Configurations
                 new Branch
                 {
                     Id = 1,
-                    Name = "شعبه رسنا",
-                    Description = "شعبه برند رسنا",
+                    Name = "شعبه مرکزی",
+                    Description = "شعبه مرکزی ",
                     IsActive = true,
                     IsMainBranch = true,
                     CreateDate = new DateTime(2025, 10, 5, 0, 0, 0, 0, DateTimeKind.Unspecified)
